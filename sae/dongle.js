@@ -1,3 +1,5 @@
+import { SAEC_Events_CYCLE_UNIT } from "./constants";
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -61,182 +63,188 @@ Logistix/SuperBase
 - POT1X * 10 / POT1Y must be between 12 and 33
 */
 
-function SAEO_Dongle() {
-	const NONE					= 0;
-	const ROBOCOP3				= 1; //Joy2
-	const LEADERBOARD			= 2; //Joy2
-	const BAT2					= 3; //Ser
-	const ITALY90				= 4; //Joy2
-	const DAMESGRANDMAITRE	= 5; //Joy2
-	const RUGBYCOACH			= 6; //Joy2
-	const CRICKETCAPTAIN		= 7; //Joy1
-	const LEVIATHAN			= 8; //Joy1
-	const LOGISTIX				= 9; //Joy2
+export class SAEO_Dongle {
+	constructor() {
+		const NONE = 0;
+		const ROBOCOP3 = 1; //Joy2
+		const LEADERBOARD = 2; //Joy2
+		const BAT2 = 3; //Ser
+		const ITALY90 = 4; //Joy2
+		const DAMESGRANDMAITRE = 5; //Joy2
+		const RUGBYCOACH = 6; //Joy2
+		const CRICKETCAPTAIN = 7; //Joy1
+		const LEVIATHAN = 8; //Joy1
+		const LOGISTIX = 9; //Joy2
 
-	const CYCLE_UNIT_200 = SAEC_Events_CYCLE_UNIT * 200;
+		const CYCLE_UNIT_200 = SAEC_Events_CYCLE_UNIT * 200;
 
-	var flag = 0; //int
-	var cycles = 0; //unsigned int
+		var flag = 0; //int
+		var cycles = 0; //unsigned int
 
-	/*var oldcia = new Array(2); //u8 [2][16]
-	oldcia[0] =  new Uint8Array(16);
-	oldcia[1] =  new Uint8Array(16);*/
 
-	/*---------------------------------*/
 
-	this.cia_read = function(cia, reg, val) { //dongle_cia_read()
-		switch (SAEV_config.dongle) {
-			case BAT2: {
-				if (cia == 1 && reg == 0) {
-					if (flag == 0 || SAEV_Events_currcycle > cycles + CYCLE_UNIT_200) {
-						val &= ~0x10;
-						flag = 0;
-					} else
-						val |= 0x10;
+
+
+
+
+		/*var oldcia = new Array(2); //u8 [2][16]
+		oldcia[0] =  new Uint8Array(16);
+		oldcia[1] =  new Uint8Array(16);*/
+		/*---------------------------------*/
+		this.cia_read = function (cia, reg, val) {
+			switch (SAEV_config.dongle) {
+				case BAT2: {
+					if (cia == 1 && reg == 0) {
+						if (flag == 0 || SAEV_Events_currcycle > cycles + CYCLE_UNIT_200) {
+							val &= ~0x10;
+							flag = 0;
+						}
+						else
+							val |= 0x10;
+					}
+					break;
 				}
-				break;
 			}
-		}
-		return val;
-	}
+			return val;
+		};
 
-	this.cia_write = function(cia, reg, val) { //dongle_cia_write()
-		switch (SAEV_config.dongle) {
-			case NONE:
-				return;
-			case ROBOCOP3: {
-				if (cia == 0 && reg == 0 && (val & 0x80))
+		this.cia_write = function (cia, reg, val) {
+			switch (SAEV_config.dongle) {
+				case NONE:
+					return;
+				case ROBOCOP3: {
+					if (cia == 0 && reg == 0 && (val & 0x80))
+						flag ^= 1;
+					break;
+				}
+				case BAT2: {
+					if (cia == 1 && reg == 0 && !(val & 0x80)) {
+						flag = 1;
+						cycles = SAEV_Events_currcycle;
+					}
+					break;
+				}
+			}
+			//oldcia[cia][reg] = val;
+		};
+
+		/*---------------------------------*/
+		this.joytest = function (val) { }; //dongle_joytest()
+
+		this.joydat = function (port, val) {
+			switch (SAEV_config.dongle) {
+				case NONE:
+					break;
+				case ROBOCOP3: {
+					if (port == 1 && flag != 0)
+						val += 0x100;
+					break;
+				}
+				case LEADERBOARD: {
+					if (port == 1) {
+						val &= ~0x0303;
+						val |= 0x0101;
+					}
+					break;
+				}
+				case LEVIATHAN: {
+					if (port == 0) {
+						val &= ~0x0303;
+						val |= 0x0101;
+					}
+					break;
+				}
+				case RUGBYCOACH: {
+					if (port == 1) {
+						val &= ~0x0303;
+						val |= 0x0301;
+					}
+					break;
+				}
+				case CRICKETCAPTAIN: {
+					if (port == 0) {
+						val &= ~0x0003;
+						if (flag == 0)
+							val |= 0x0001;
+
+						else
+							val |= 0x0002;
+					}
 					flag ^= 1;
-				break;
-			}
-			case BAT2: {
-				if (cia == 1 && reg == 0 && !(val & 0x80)) {
-					flag = 1;
-					cycles = SAEV_Events_currcycle;
+					break;
 				}
-				break;
 			}
-		}
-		//oldcia[cia][reg] = val;
-	}
+			return val;
+		};
 
-	/*---------------------------------*/
-
-	this.joytest = function(val) {} //dongle_joytest()
-
-	this.joydat = function(port, val) { //dongle_joydat()
-		switch (SAEV_config.dongle) {
-			case NONE:
-				break;
-			case ROBOCOP3: {
-				if (port == 1 && flag != 0)
-					val += 0x100;
-				break;
+		/*---------------------------------*/
+		this.potgo = function (val) {
+			switch (SAEV_config.dongle) {
+				case NONE:
+					return;
+				case ITALY90:
+				case LOGISTIX:
+				case DAMESGRANDMAITRE:
+					//flag = (uaerand() & 7) - 3;
+					flag = ((Math.random() * 8) >>> 0) - 3;
+					break;
 			}
-			case LEADERBOARD: {
-				if (port == 1) {
-					val &= ~0x0303;
-					val |= 0x0101;
-				}
-				break;
+		};
+
+		this.potgor = function (val) {
+			switch (SAEV_config.dongle) {
+				case LOGISTIX:
+					val |= 1 << 14;
+					break;
 			}
-			case LEVIATHAN: {
-				if (port == 0) {
-					val &= ~0x0303;
-					val |= 0x0101;
-				}
-				break;
+			return val;
+		};
+
+		/*---------------------------------*/
+		this.analogjoy = function (joy, axis) {
+			var v = -1; //int
+
+			switch (SAEV_config.dongle) {
+				case NONE:
+					return -1;
+				case ITALY90:
+					if (joy == 1 && axis == 0)
+						v = 73;
+					break;
+				case LOGISTIX:
+					if (joy == 1) {
+						if (axis == 0)
+							v = 21;
+						if (axis == 1)
+							v = 10;
+					}
+					break;
+				case DAMESGRANDMAITRE:
+					if (joy == 1) {
+						if (axis == 1)
+							v = 80;
+						if (axis == 0)
+							v = 43;
+					}
+					break;
 			}
-			case RUGBYCOACH: {
-				if (port == 1) {
-					val &= ~0x0303;
-					val|= 0x0301;
-				}
-				break;
+			if (v >= 0) {
+				v += flag;
+				if (v < 0)
+					v = 0;
 			}
-			case CRICKETCAPTAIN: {
-				if (port == 0) {
-					val &= ~0x0003;
-					if (flag == 0)
-						val |= 0x0001;
-					else
-						val |= 0x0002;
-				}
-				flag ^= 1;
-				break;
-			}
-		}
-		return val;
-	}
+			return v;
+		};
 
-	/*---------------------------------*/
+		/*---------------------------------*/
+		this.reset = function () {
+			flag = 0;
+			cycles = 0; //OWN
 
-	this.potgo = function(val) { //dongle_potgo()
-		switch (SAEV_config.dongle) {
-			case NONE:
-				return;
-			case ITALY90:
-			case LOGISTIX:
-			case DAMESGRANDMAITRE:
-				//flag = (uaerand() & 7) - 3;
-				flag = ((Math.random() * 8) >>> 0) - 3;
-				break;
-		}
-	}
 
-	this.potgor = function(val) { //dongle_potgor()
-		switch (SAEV_config.dongle) {
-			case LOGISTIX:
-				val |= 1 << 14;
-				break;
-		}
-		return val;
-	}
 
-	/*---------------------------------*/
-
-	this.analogjoy = function(joy, axis) { //dongle_analogjoy()
-		var v = -1; //int
-
-		switch (SAEV_config.dongle) {
-			case NONE:
-				return -1;
-			case ITALY90:
-				if (joy == 1 && axis == 0)
-					v = 73;
-				break;
-			case LOGISTIX:
-				if (joy == 1) {
-					if (axis == 0)
-						v = 21;
-					if (axis == 1)
-						v = 10;
-				}
-				break;
-			case DAMESGRANDMAITRE:
-				if (joy == 1) {
-					if (axis == 1)
-						v = 80;
-					if (axis == 0)
-						v = 43;
-				}
-				break;
-		}
-		if (v >= 0) {
-			v += flag;
-			if (v < 0)
-				v = 0;
-		}
-		return v;
-	}
-
-	/*---------------------------------*/
-
-	this.reset = function() { //dongle_reset()
-		flag = 0;
-		cycles = 0; //OWN
-
-		//memset (oldcia, 0, sizeof oldcia);
-		//for (var i = 0; i < 16; i++) oldcia[0][i] = oldcia[1][i] = 0;
+			//memset (oldcia, 0, sizeof oldcia);
+			//for (var i = 0; i < 16; i++) oldcia[0][i] = oldcia[1][i] = 0;
+		};
 	}
 }

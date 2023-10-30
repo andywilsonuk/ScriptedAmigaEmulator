@@ -1,3 +1,28 @@
+import { SAEO_Audio } from "./audio";
+import { SAEO_AutoConf } from "./autoconf";
+import { SAEO_Blitter } from "./blitter";
+import { SAEO_CIA } from "./cia";
+import { SAEO_Configuration } from "./config";
+import { SAEO_Copper } from "./copper";
+import { SAEO_CPU } from "./cpu";
+import { SAEO_Custom, SAEO_Devices } from "./custom";
+import { SAEO_Disk } from "./disk";
+import { SAEO_Dongle } from "./dongle";
+import { SAEO_Events } from "./events";
+import { SAEO_Expansion } from "./expansion";
+import { SAEO_Filesys } from "./filesys";
+import { SAEO_Gayle } from "./gayle";
+import { SAEO_Hardfile } from "./hardfile";
+import { SAEO_IDE } from "./ide";
+import { SAEO_Input } from "./input";
+import { SAEO_M68K } from "./m68k";
+import { SAEO_Memory } from "./memory";
+import { SAEO_Playfield } from "./playfield";
+import { SAEO_Roms } from "./roms";
+import { SAEO_RTC } from "./rtc";
+import { SAEO_Parallel, SAEO_Serial } from "./serpar";
+import { SAEO_GUI, SAEO_Video } from "./video";
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -307,328 +332,323 @@ function SAEF_assert(cond) {
 
 /*---------------------------------*/
 
-function ScriptedAmigaEmulator() {
-	SAER = this;
+export class ScriptedAmigaEmulator {
+	constructor() {
+		SAER = this;
 
-	this.audio = new SAEO_Audio();
-	this.autoconf = new SAEO_AutoConf();
-	this.blitter = new SAEO_Blitter();
-	this.cia = new SAEO_CIA();
-	this.config = new SAEO_Configuration();
-	this.copper = new SAEO_Copper();
-	this.cpu = new SAEO_CPU();
-	this.custom = new SAEO_Custom();
-	this.devices = new SAEO_Devices();
-	this.disk = new SAEO_Disk();
-	this.dongle = new SAEO_Dongle();
-	this.events = new SAEO_Events();
-	this.expansion = new SAEO_Expansion();
-	this.filesys = new SAEO_Filesys();
-	this.gayle = new SAEO_Gayle();
-	this.gui = new SAEO_GUI();
-	this.hardfile = new SAEO_Hardfile();
-	this.ide = new SAEO_IDE();
-	this.input = new SAEO_Input();
-	this.m68k = new SAEO_M68K();
-	this.memory = new SAEO_Memory();
-	this.parallel = new SAEO_Parallel();
-	this.playfield = new SAEO_Playfield();
-	this.roms = new SAEO_Roms();
-	this.rtc = new SAEO_RTC();
-	this.serial = new SAEO_Serial();
-	this.video = new SAEO_Video();
+		this.audio = new SAEO_Audio();
+		this.autoconf = new SAEO_AutoConf();
+		this.blitter = new SAEO_Blitter();
+		this.cia = new SAEO_CIA();
+		this.config = new SAEO_Configuration();
+		this.copper = new SAEO_Copper();
+		this.cpu = new SAEO_CPU();
+		this.custom = new SAEO_Custom();
+		this.devices = new SAEO_Devices();
+		this.disk = new SAEO_Disk();
+		this.dongle = new SAEO_Dongle();
+		this.events = new SAEO_Events();
+		this.expansion = new SAEO_Expansion();
+		this.filesys = new SAEO_Filesys();
+		this.gayle = new SAEO_Gayle();
+		this.gui = new SAEO_GUI();
+		this.hardfile = new SAEO_Hardfile();
+		this.ide = new SAEO_IDE();
+		this.input = new SAEO_Input();
+		this.m68k = new SAEO_M68K();
+		this.memory = new SAEO_Memory();
+		this.parallel = new SAEO_Parallel();
+		this.playfield = new SAEO_Playfield();
+		this.roms = new SAEO_Roms();
+		this.rtc = new SAEO_RTC();
+		this.serial = new SAEO_Serial();
+		this.video = new SAEO_Video();
 
-	/*---------------------------------*/
+		/*---------------------------------*/
+		this.running = false;
+		this.paused = false;
 
-	this.running = false;
-	this.paused = false;
+		/*-----------------------------------------------------------------------*/
+		this.dump = function () {
+			this.m68k.dump();
+			//this.memory.dump();
+			//this.cia.dump();
+		};
 
-	/*-----------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------*/
+		this.do_start_program = function () {
+			if (SAEV_command >= 0)
+				SAEV_command = SAEC_command_Reset;
 
-	this.dump = function () {
-		this.m68k.dump();
-		//this.memory.dump();
-		//this.cia.dump();
-	};
+			this.m68k.m68k_go(true);
+		};
 
-	/*-----------------------------------------------------------------------*/
-
-	this.do_start_program = function() {
-		if (SAEV_command >= 0)
-			SAEV_command = SAEC_command_Reset;
-
-		this.m68k.m68k_go(true);
-	}
-
-	this.do_leave_program = function() {
-		//sampler_free();
-		this.video.cleanup();
-		this.input.cleanup();
-		this.disk.cleanup();
-		this.audio.cleanup();
-		//dump_counts();
-		this.serial.cleanup();
-		/*#ifdef CDTV
-		cdtv_free();
-		cdtvcr_free();
-		#endif
-		#ifdef CD32
-		akiko_free();
-		cd32_fmv_free();
-		#endif*/
-		//this.gui.cleanup(); //empty
-		//#ifdef AUTOCONFIG
-		this.expansion.cleanup();
-		//#endif
-		//#ifdef FILESYS
-		this.filesys.cleanup();
-		//#endif
-		this.gayle.cleanup();
-		/*idecontroller_free();
-		device_func_reset();
-		#ifdef WITH_TOCCATA
-		sndboard_free();
-		#endif*/
-		this.memory.cleanup();
-		//free_shm();
-		this.autoconf.cleanup();
-	}
-
-	this.start_program = function() {
-		this.do_start_program();
-
-		if (typeof SAEV_config.hook.event.started === "function")
-			SAEV_config.hook.event.started();
-	}
-
-	this.leave_program = function() {
-		this.dump();
-		this.do_leave_program();
-
-		if (typeof SAEV_config.hook.event.stopped === "function")
-			SAEV_config.hook.event.stopped();
-	}
-
-	this.pause_program = function(p) {
-		this.audio.pauseResume(p);
-		this.events.pauseResume(p);
-
-		if (typeof SAEV_config.hook.event.paused === "function")
-			SAEV_config.hook.event.paused(p);
-	}
-
-	/*---------------------------------*/
-	/* API */
-
-	this.getVersion = function(str) {
-		if (str)
-			return sprintf("%d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
-		else
-			return [SAEC_Version, SAEC_Revision, SAEC_Patch];
-	}
-	this.getInfo = function() {
-		return SAEC_info;
-	}
-	this.getConfig = function() {
-		return SAEV_config;
-	}
-
-	this.setDefaults = function() {
-		return this.config.setDefaults();
-	}
-	this.setModel = function(model, config) {
-		return this.config.setModel(model, config);
-	}
-
-	this.setMountInfoDefaults = function(num) {
-		var ci = SAEV_config.mount.config[num].ci;
-		this.filesys.uci_set_defaults(ci, false);
-	}
-
-	this.start = function() {
-		if (SAER.running) {
-			SAEF_warn("sae.start() emulation already running");
-			return SAEE_AlreadyRunning;
-		}
-		SAEF_info("sae.start() starting...");
-
-		var err;
-		if ((err = this.config.setup()) != SAEE_None)
-			return err;
-		if ((err = this.video.obtain()) != SAEE_None)
-			return err;
-		if ((err = this.audio.obtain()) != SAEE_None)
-			return err;
-		if ((err = this.input.setup()) != SAEE_None) //inputdevice_init();
-			return err;
-		if ((err = this.gui.setup()) != SAEE_None)
-			return err;
-
-		/*#ifdef PICASSO96
-		picasso_reset();
-		#endif*/
-
-		//this.config.fixup_prefs(currprefs, true);
-		//SAEV_config.audio.mode = 0; /* force sound settings change */
-
-		this.memory.hardreset(2);
-		if ((err = this.memory.reset(true)) == SAEE_None)
-		{
-			/*#ifdef AUTOCONFIG
-			native2amiga_install();
+		this.do_leave_program = function () {
+			//sampler_free();
+			this.video.cleanup();
+			this.input.cleanup();
+			this.disk.cleanup();
+			this.audio.cleanup();
+			//dump_counts();
+			this.serial.cleanup();
+			/*#ifdef CDTV
+			cdtv_free();
+			cdtvcr_free();
+			#endif
+			#ifdef CD32
+			akiko_free();
+			cd32_fmv_free();
 			#endif*/
-			this.custom.setup(); //OWN
-			this.blitter.setup(); //OWN
-			this.playfield.setup(); //custom_init();
-			//this.serial.setup(); //empty
-			this.disk.setup();
+			//this.gui.cleanup(); //empty
+			//#ifdef AUTOCONFIG
+			this.expansion.cleanup();
+			//#endif
+			//#ifdef FILESYS
+			this.filesys.cleanup();
+			//#endif
+			this.gayle.cleanup();
+			/*idecontroller_free();
+			device_func_reset();
+			#ifdef WITH_TOCCATA
+			sndboard_free();
+			#endif*/
+			this.memory.cleanup();
+			//free_shm();
+			this.autoconf.cleanup();
+		};
 
-			this.events.reset_frame_rate_hack();
-			if ((err = this.m68k.setup()) == SAEE_None) /* m68k_init() must come after reset_frame_rate_hack() */
-			{
-				//this.gui.update(); //empty
-				if ((err = this.video.setup(true)) == SAEE_None)
-				{
-					if ((err = this.audio.setup()) == SAEE_None)
-					{
-						this.start_program();
-						SAEF_info("sae.start() ...done");
-						return SAEE_None;
+		this.start_program = function () {
+			this.do_start_program();
+
+			if (typeof SAEV_config.hook.event.started === "function")
+				SAEV_config.hook.event.started();
+		};
+
+		this.leave_program = function () {
+			this.dump();
+			this.do_leave_program();
+
+			if (typeof SAEV_config.hook.event.stopped === "function")
+				SAEV_config.hook.event.stopped();
+		};
+
+		this.pause_program = function (p) {
+			this.audio.pauseResume(p);
+			this.events.pauseResume(p);
+
+			if (typeof SAEV_config.hook.event.paused === "function")
+				SAEV_config.hook.event.paused(p);
+		};
+
+		/*---------------------------------*/
+		/* API */
+		this.getVersion = function (str) {
+			if (str)
+				return sprintf("%d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
+
+			else
+				return [SAEC_Version, SAEC_Revision, SAEC_Patch];
+		};
+		this.getInfo = function () {
+			return SAEC_info;
+		};
+		this.getConfig = function () {
+			return SAEV_config;
+		};
+
+		this.setDefaults = function () {
+			return this.config.setDefaults();
+		};
+		this.setModel = function (model, config) {
+			return this.config.setModel(model, config);
+		};
+
+		this.setMountInfoDefaults = function (num) {
+			var ci = SAEV_config.mount.config[num].ci;
+			this.filesys.uci_set_defaults(ci, false);
+		};
+
+		this.start = function () {
+			if (SAER.running) {
+				SAEF_warn("sae.start() emulation already running");
+				return SAEE_AlreadyRunning;
+			}
+			SAEF_info("sae.start() starting...");
+
+			var err;
+			if ((err = this.config.setup()) != SAEE_None)
+				return err;
+			if ((err = this.video.obtain()) != SAEE_None)
+				return err;
+			if ((err = this.audio.obtain()) != SAEE_None)
+				return err;
+			if ((err = this.input.setup()) != SAEE_None) //inputdevice_init();
+				return err;
+			if ((err = this.gui.setup()) != SAEE_None)
+				return err;
+
+			/*#ifdef PICASSO96
+			picasso_reset();
+			#endif*/
+			//this.config.fixup_prefs(currprefs, true);
+			//SAEV_config.audio.mode = 0; /* force sound settings change */
+			this.memory.hardreset(2);
+			if ((err = this.memory.reset(true)) == SAEE_None) {
+				/*#ifdef AUTOCONFIG
+				native2amiga_install();
+				#endif*/
+				this.custom.setup(); //OWN
+				this.blitter.setup(); //OWN
+				this.playfield.setup(); //custom_init();
+
+				//this.serial.setup(); //empty
+				this.disk.setup();
+
+				this.events.reset_frame_rate_hack();
+				if ((err = this.m68k.setup()) == SAEE_None) /* m68k_init() must come after reset_frame_rate_hack() */ {
+					//this.gui.update(); //empty
+					if ((err = this.video.setup(true)) == SAEE_None) {
+						if ((err = this.audio.setup()) == SAEE_None) {
+							this.start_program();
+							SAEF_info("sae.start() ...done");
+							return SAEE_None;
+						}
+						this.video.cleanup();
 					}
-					this.video.cleanup();
 				}
 			}
-		}
-		this.input.cleanup();
-		SAEF_error("sae.start() ...error %d", err);
-		return err;
-	}
+			this.input.cleanup();
+			SAEF_error("sae.start() ...error %d", err);
+			return err;
+		};
 
-	this.stop = function() { //uae_quit()
-		if (this.running) {
-			SAEF_info("sae.stop()");
-			if (SAEV_command != -SAEC_command_Quit)
-				SAEV_command = -SAEC_command_Quit;
+		this.stop = function () {
+			if (this.running) {
+				SAEF_info("sae.stop()");
+				if (SAEV_command != -SAEC_command_Quit)
+					SAEV_command = -SAEC_command_Quit;
 
-			return SAEE_None;
-		} else {
-			SAEF_warn("sae.stop() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
-
-	this.reset = function(hard, keyboard) { //uae_reset(hard, keyboard)
-		if (typeof hard == "undefined") var hard = false;
-		if (typeof keyboard == "undefined") var keyboard = false;
-		if (this.running) {
-			SAEF_info("sae.reset() hard %d, keyboard %d", hard?1:0, keyboard?1:0);
-			if (SAEV_command == 0) {
-				SAEV_command = -SAEC_command_Reset; /* soft */
-				if (keyboard)
-					SAEV_command = -SAEC_command_KeyboardReset;
-				if (hard)
-					SAEV_command = -SAEC_command_HardReset;
-			}
-			return SAEE_None;
-		} else {
-			SAEF_warn("sae.reset() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
-
-	this.pause = function(pause) {
-		if (this.running) {
-			if (!this.paused && pause) {
-				SAEF_info("sae.pause() pausing emulation");
-				SAEV_command = SAEC_command_Pause;
-			}
-			else if (this.paused && !pause) {
-				SAEF_info("sae.pause() resuming emulation");
-				SAEV_command = SAEC_command_Resume;
-			}
-			return SAEE_None;
-		} else {
-			SAEF_warn("sae.pause() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
-
-	this.mute = function(mute) {
-		if (this.running) {
-			this.audio.mute(mute);
-			if (mute)
-				SAEF_log("sae.mute() audio muted");
-			else
-				SAEF_log("sae.mute() playing audio");
-			return SAEE_None;
-		} else {
-			SAEF_warn("sae.mute() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
-
-	this.screen = function(screen) {
-		if (this.running) {
-			if (SAEC_info.video.requestFullScreen) {
-				this.video.screen(screen);
-				if (screen)
-					SAEF_log("sae.screen() screen-mode");
-				else
-					SAEF_log("sae.screen() window-mode");
 				return SAEE_None;
 			} else {
-				SAEF_error("sae.screen() screen-api not supported");
-				return SAEE_Video_RequiresFullscreen;
+				SAEF_warn("sae.stop() emulation not running");
+				return SAEE_NotRunning;
 			}
-		} else {
-			SAEF_warn("sae.screen() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
+		};
 
-	this.insert = function(unit) {
-		if (this.running) {
-			var file = SAEV_config.floppy.drive[unit].file;
-			this.disk.insert(unit, file);
-			SAEF_info("sae.insert() unit %d inserted, name '%s', size %d, protected %d", unit, file.name, file.size, file.prot?1:0);
+		this.reset = function (hard, keyboard) {
+			if (typeof hard == "undefined") var hard = false;
+			if (typeof keyboard == "undefined") var keyboard = false;
+			if (this.running) {
+				SAEF_info("sae.reset() hard %d, keyboard %d", hard ? 1 : 0, keyboard ? 1 : 0);
+				if (SAEV_command == 0) {
+					SAEV_command = -SAEC_command_Reset; /* soft */
+					if (keyboard)
+						SAEV_command = -SAEC_command_KeyboardReset;
+					if (hard)
+						SAEV_command = -SAEC_command_HardReset;
+				}
+				return SAEE_None;
+			} else {
+				SAEF_warn("sae.reset() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.pause = function (pause) {
+			if (this.running) {
+				if (!this.paused && pause) {
+					SAEF_info("sae.pause() pausing emulation");
+					SAEV_command = SAEC_command_Pause;
+				}
+				else if (this.paused && !pause) {
+					SAEF_info("sae.pause() resuming emulation");
+					SAEV_command = SAEC_command_Resume;
+				}
+				return SAEE_None;
+			} else {
+				SAEF_warn("sae.pause() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.mute = function (mute) {
+			if (this.running) {
+				this.audio.mute(mute);
+				if (mute)
+					SAEF_log("sae.mute() audio muted");
+
+				else
+					SAEF_log("sae.mute() playing audio");
+				return SAEE_None;
+			} else {
+				SAEF_warn("sae.mute() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.screen = function (screen) {
+			if (this.running) {
+				if (SAEC_info.video.requestFullScreen) {
+					this.video.screen(screen);
+					if (screen)
+						SAEF_log("sae.screen() screen-mode");
+
+					else
+						SAEF_log("sae.screen() window-mode");
+					return SAEE_None;
+				} else {
+					SAEF_error("sae.screen() screen-api not supported");
+					return SAEE_Video_RequiresFullscreen;
+				}
+			} else {
+				SAEF_warn("sae.screen() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.insert = function (unit) {
+			if (this.running) {
+				var file = SAEV_config.floppy.drive[unit].file;
+				this.disk.insert(unit, file);
+				SAEF_info("sae.insert() unit %d inserted, name '%s', size %d, protected %d", unit, file.name, file.size, file.prot ? 1 : 0);
+				return SAEE_None;
+			} else {
+				SAEF_warn("sae.insert() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.eject = function (unit) {
+			if (this.running) {
+				this.disk.eject(unit);
+				SAEF_info("sae.eject() unit %d ejected", unit);
+				return SAEE_None;
+			} else {
+				SAEF_warn("sae.eject() emulation not running");
+				return SAEE_NotRunning;
+			}
+		};
+
+		this.getRomInfo = function (ri, file) {
+			return this.roms.examine(ri, file);
+		};
+
+		this.getDiskInfo = function (di, unit) {
+			return this.disk.examine(di, unit);
+		};
+
+		this.createDisk = function (unit, name, mode, type, label, ffs, bootable) {
+			if (!this.disk.create(unit, name, mode, type, label, ffs, bootable))
+				return SAEE_NoMemory;
 			return SAEE_None;
-		} else {
-			SAEF_warn("sae.insert() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
+		};
 
-	this.eject = function(unit) {
-		if (this.running) {
-			this.disk.eject(unit);
-			SAEF_info("sae.eject() unit %d ejected", unit);
+		this.keyPress = function (e, down) {
+			this.input.keyPress(e, down);
 			return SAEE_None;
-		} else {
-			SAEF_warn("sae.eject() emulation not running");
-			return SAEE_NotRunning;
-		}
-	};
+		};
 
-	this.getRomInfo = function(ri, file) {
-		return this.roms.examine(ri, file);
-	};
-
-	this.getDiskInfo = function(di, unit) {
-		return this.disk.examine(di, unit);
-	};
-
-	this.createDisk = function(unit, name, mode, type, label, ffs, bootable) {
-		if (!this.disk.create(unit, name, mode, type, label, ffs, bootable))
-			return SAEE_NoMemory;
-		return SAEE_None;
-	};
-
-	this.keyPress = function(e, down) {
-		this.input.keyPress(e, down);
-		return SAEE_None;
-	};
-
-	/*---------------------------------*/
-
-	SAEF_info("SAE %d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
+		/*---------------------------------*/
+		SAEF_info("SAE %d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
+	}
 }

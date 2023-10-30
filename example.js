@@ -1,3 +1,5 @@
+import { SAEC_Video_DEF_AMIGA_HEIGHT, SAEC_Video_DEF_AMIGA_WIDTH } from "./sae/constants";
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -700,4 +702,8 @@ function initLEDs() {
 	e_led_cpu = document.getElementById("status_led_cpu");
 
 	resetLEDs();
+}
+
+window.onload = () => {
+	init();
 }

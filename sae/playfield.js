@@ -1,3 +1,5 @@
+import { SAEC_Playfield_CLOCK_PAL, SAEC_Playfield_CLOCK_NTSC, SAEC_Events_CYCLE_UNIT } from './constants';
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -16,10 +18,6 @@
 |
 | Note: ported from WinUAE 3.2.x
 -------------------------------------------------------------------------*/
-/* global constants */
-
-var SAEC_Playfield_CLOCK_PAL  = 3546895;
-var SAEC_Playfield_CLOCK_NTSC = 3579545;
 
 /*---------------------------------*/
 /* global variables */
@@ -65,7 +63,7 @@ function SAEF_Playfield_getvsyncrate(hz, result) { //double getvsyncrate(double 
 
 /*---------------------------------*/
 
-function SAEO_Playfield() {
+export function SAEO_Playfield() {
 	/* SECT drawing defs */
 	const SMART_UPDATE = true; //OPT
 	const SPEEDUP = true;

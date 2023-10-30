@@ -16,6 +16,8 @@
 -------------------------------------------------------------------------*/
 /* errors (copied from amiga.js) */
 
+import { SAEO_CPU } from "./cpu";
+
 function SAEO_Error(err, msg) {
 	this.err = err;
 	this.msg = msg;
@@ -41,18 +43,19 @@ const SAEE_CPU_Requires68040 = 24;
 
 /*-----------------------------------------------------------------------*/
 
-function ScriptedDisAssembler() {
-	this.cpu = new SAEO_CPU();
-	var err = this.cpu.setup_da(68030);
-	if (err != SAEE_None)
-		throw err;
+export class ScriptedDisAssembler {
+	constructor() {
+		this.cpu = new SAEO_CPU();
+		var err = this.cpu.setup_da(68030);
+		if (err != SAEE_None)
+			throw err;
 
-	/*---------------------------------*/
-
-	this.getConfig = function() {
-		return this.cpu.getConfig_da();
-	}
-	this.disassemble = function() {
-		return this.cpu.disassemble();
+		/*---------------------------------*/
+		this.getConfig = function () {
+			return this.cpu.getConfig_da();
+		};
+		this.disassemble = function () {
+			return this.cpu.disassemble();
+		};
 	}
 }

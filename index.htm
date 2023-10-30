@@ -10,37 +10,9 @@
 		<meta name="robots" content="index,nofollow" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<link rel="stylesheet" type="text/css" href="index.css" />
-		<script type="text/javascript" src="sae/prototypes.js"></script>
-		<script type="text/javascript" src="sae/utils.js"></script>
-		<script type="text/javascript" src="sae/dms.js"></script>
-		<script type="text/javascript" src="sae/config.js"></script>
-		<script type="text/javascript" src="sae/roms.js"></script>
-		<script type="text/javascript" src="sae/memory.js"></script>
-		<script type="text/javascript" src="sae/autoconf.js"></script>
-		<script type="text/javascript" src="sae/expansion.js"></script>
-		<script type="text/javascript" src="sae/events.js"></script>
-		<script type="text/javascript" src="sae/gayle.js"></script>
-		<script type="text/javascript" src="sae/ide.js"></script>
-		<script type="text/javascript" src="sae/filesys.js"></script>
-		<script type="text/javascript" src="sae/hardfile.js"></script>
-		<script type="text/javascript" src="sae/dongle.js"></script>
-		<script type="text/javascript" src="sae/input.js"></script>
-		<script type="text/javascript" src="sae/serpar.js"></script>
-		<script type="text/javascript" src="sae/custom.js"></script>
-		<script type="text/javascript" src="sae/blitter.js"></script>
-		<script type="text/javascript" src="sae/copper.js"></script>
-		<script type="text/javascript" src="sae/playfield.js"></script>
-		<script type="text/javascript" src="sae/video.js"></script>
-		<script type="text/javascript" src="sae/audio.js"></script>
-		<script type="text/javascript" src="sae/cia.js"></script>
-		<script type="text/javascript" src="sae/disk.js"></script>
-		<script type="text/javascript" src="sae/rtc.js"></script>
-		<script type="text/javascript" src="sae/m68k.js"></script>
-		<script type="text/javascript" src="sae/cpu.js"></script>
-		<script type="text/javascript" src="sae/amiga.js"></script>
-		<script type="text/javascript" src="index.js"></script>
+		<script type="module" src="index.js"></script>
 	</head>
-	<body onload="init()">
+	<body>
 		<div id="base">
 			<div id="head" class="head">
 				<noscript>
@@ -73,13 +45,13 @@
 								<tr>
 									<td class="arm"><span class="label">Game</span></td>
 									<td>
-										<select id="cfg_game" size="1" onchange="preSelect(1)" style="width:100%">
+										<select id="cfg_game" size="1" style="width:100%">
 											<option value="0" selected="selected" style="display:none;">-select-</option>
 										</select>
 									</td>
 									<td class="arm"><span class="label">Demo</span></td>
 									<td>
-										<select id="cfg_demo" size="1" onchange="preSelect(2)" style="width:100%">
+										<select id="cfg_demo" size="1" style="width:100%">
 											<option value="0" selected="selected" style="display:none;">-select-</option>
 										</select>
 									</td>
@@ -87,13 +59,13 @@
 								<tr>
 									<td class="arm"><span class="label">Tool</span></td>
 									<td>
-										<select id="cfg_tool" size="1" onchange="preSelect(4)" style="width:100%">
+										<select id="cfg_tool" size="1" style="width:100%">
 											<option value="0" selected="selected" style="display:none;">-select-</option>
 										</select>
 									</td>
 									<td class="arm"><span class="label">AGA-Demo</span></td>
 									<td>
-										<select id="cfg_demo_aga" size="1" onchange="preSelect(3)" style="width:100%">
+										<select id="cfg_demo_aga" size="1" style="width:100%">
 											<option value="0" selected="selected" style="display:none;">-select-</option>
 										</select>
 									</td>
@@ -117,8 +89,8 @@
 					</div>
 					<div style="height:10px"></div>
 					<div class="acm">
-						<button class="sbutton" id="cfg_database_start" onclick="databaseStart()">Start</button>
-						<button class="sbutton" id="cfg_database_config" onclick="switchCfg(1)">Config</button>
+						<button class="sbutton" id="cfg_database_start">Start</button>
+						<button class="sbutton" id="cfg_database_config">Config</button>
 					</div>
 				</div>
 				<div id="config_advanced">
@@ -162,7 +134,7 @@
 										</tr>
 										<tr><td><input type="radio" name="cfg_model" value="A1000" /></td>
 											<td>
-												<select id="cfg_model_a1000" size="1" onchange="selectModelUpdate('A1000')">
+												<select id="cfg_model_a1000" size="1">
 													<option value="0">Amiga 1000</option>
 													<option value="1">Amiga 1000, 256K Chip</option>
 													<option value="2">Amiga 1000, 256K Chip, ECS-D w/o EHB</option>
@@ -176,7 +148,7 @@
 										</tr>
 										<tr><td><input type="radio" name="cfg_model" value="A500" /></td>
 											<td>
-												<select id="cfg_model_a500" size="1" onchange="selectModelUpdate('A500')">
+												<select id="cfg_model_a500" size="1">
 													<option value="0">Amiga 500</option>
 													<option value="1">Amiga 500, ECS Agnus</option>
 													<option value="2">Amiga 500, ECS Agnus, 1M Chip</option>
@@ -196,7 +168,7 @@
 										</tr>
 										<tr><td><input type="radio" name="cfg_model" value="A500P" /></td>
 											<td>
-												<select id="cfg_model_a500p" size="1" onchange="selectModelUpdate('A500P')">
+												<select id="cfg_model_a500p" size="1">
 													<option value="0">Amiga 500+</option>
 													<option value="1">Amiga 500+, 2M Chip</option>
 													<option value="2">Amiga 500+, 2M Chip, 4M Fast</option>
@@ -209,7 +181,7 @@
 										</tr>
 										<tr><td><input type="radio" name="cfg_model" value="A600" /></td>
 											<td>
-												<select id="cfg_model_a600" size="1" onchange="selectModelUpdate('A600')">
+												<select id="cfg_model_a600" size="1">
 													<option value="0">Amiga 600</option>
 													<option value="1">Amiga 600, 2M Chip, RTC</option>
 													<option value="2">Amiga 600, 2M Chip, 4M Fast, RTC</option>
@@ -222,7 +194,7 @@
 										</tr>
 										<tr><td><input type="radio" name="cfg_model" value="A1200" /></td>
 											<td>
-												<select id="cfg_model_a1200" size="1" onchange="selectModelUpdate('A1200')">
+												<select id="cfg_model_a1200" size="1">
 													<option value="0">Amiga 1200</option>
 													<option value="1">Amiga 1200, 4M Fast, RTC</option>
 												</select>
@@ -274,7 +246,7 @@
 										</tr>-->
 									</table>
 									<div style="height:5px"></div>
-									<button class="button" id="cfg_model_select" onclick="selectModel()">Set</button>
+									<button class="button" id="cfg_model_select">Set</button>
 								</div>
 								<div class="page" id="cfg_page_cpu">
 									<table style="border-collapse:collapse">
@@ -369,12 +341,12 @@
 													<option value="3">Full</option>
 												</select>
 											</td>
-											<td class="arm"><input type="radio" name="cfg_blitter_immediate" value="0" onchange="immediateUpdate(1)" /></td>
+											<td class="arm"><input type="radio" name="cfg_blitter_immediate" id="cfg_blitter_immediate_0" value="0" /></td>
 											<td>Immediate</td>
 										</tr>
 										<tr>
 											<td colspan="2"></td>
-											<td class="arm"><input type="radio" name="cfg_blitter_immediate" value="1" onchange="immediateUpdate(0)" /></td>
+											<td class="arm"><input type="radio" name="cfg_blitter_immediate" id="cfg_blitter_immediate_1" value="1" /></td>
 											<td>Waiting
 												<select id="cfg_blitter_waiting" size="1">
 													<option value="0">Never</option>
@@ -391,7 +363,7 @@
 										<tr>
 											<td class="arm">Model</td>
 											<td colspan="3">
-												<select id="cfg_chipset_features" size="1" onchange="featuresUpdate()">
+												<select id="cfg_chipset_features" size="1">
 													<option value="generic">Generic</option>
 													<option value="A500">A500</option>
 													<option value="A500P">A500+</option>
@@ -604,7 +576,7 @@
 									</table>
 								</div>
 								<div class="page" id="cfg_page_rom">
-									<input id="cfg_rom_use_aros" type="checkbox" onchange="romUpdate()" />Use the AROS kickstart-replacement
+									<input id="cfg_rom_use_aros" type="checkbox" />Use the AROS kickstart-replacement
 									<div id="cfg_rom_grp">
 										<table style="border-collapse:collapse">
 											<tr><td colspan="2"><div style="height:10px"></div></td></tr>
@@ -614,10 +586,10 @@
 													<table>
 														<tr>
 															<td>
-																<button class="button" onclick="document.getElementById('cfg_rom_file').click()">Select</button>
-																<button class="button" id="cfg_rom_remove" onclick="romRemove()">Remove</button>
-																<button class="button" id="cfg_rom_info" onclick="romOpenInfo()">Info</button>
-																<input id="cfg_rom_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="romSelect()" />
+																<button class="button" id="cfg_rom_select">Select</button>
+																<button class="button" id="cfg_rom_remove">Remove</button>
+																<button class="button" id="cfg_rom_info">Info</button>
+																<input id="cfg_rom_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 															</td>
 															<td style="width:100%"></td>
 															<td>
@@ -637,10 +609,10 @@
 													<table>
 														<tr>
 															<td>
-																<button class="button" onclick="document.getElementById('cfg_ext_file').click()">Select</button>
-																<button class="button" id="cfg_ext_remove" onclick="extRemove()">Remove</button>
-																<button class="button" id="cfg_ext_info" onclick="extOpenInfo()">Info</button>
-																<input id="cfg_ext_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="extSelect()" />
+																<button class="button" id="cfg_ext_select">Select</button>
+																<button class="button" id="cfg_ext_remove">Remove</button>
+																<button class="button" id="cfg_ext_info">Info</button>
+																<input id="cfg_ext_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 															</td>
 															<td style="width:100%"></td>
 														</tr>
@@ -656,10 +628,10 @@
 													<table>
 														<tr>
 															<td>
-																<button class="button" onclick="document.getElementById('cfg_key_file').click()">Select</button>
-																<button class="button" id="cfg_key_remove" onclick="keyRemove()">Remove</button>
-																<button class="button" id="cfg_key_info" onclick="keyOpenInfo()">Info</button>
-																<input id="cfg_key_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="keySelect()" />
+																<button class="button" id="cfg_key_select">Select</button>
+																<button class="button" id="cfg_key_remove">Remove</button>
+																<button class="button" id="cfg_key_info">Info</button>
+																<input id="cfg_key_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 															</td>
 															<td style="width:100%"></td>
 														</tr>
@@ -676,10 +648,10 @@
 													<table>
 														<tr>
 															<td>
-																<button class="button" onclick="document.getElementById('cfg_amax_file').click()">Select</button>
-																<button class="button" id="cfg_amax_remove" onclick="amaxRemove()">Remove</button>
-																<button class="button" id="cfg_amax_info" onclick="amaxOpenInfo()">Info</button>
-																<input id="cfg_amax_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="amaxSelect()" />
+																<button class="button" id="cfg_amax_select">Select</button>
+																<button class="button" id="cfg_amax_remove">Remove</button>
+																<button class="button" id="cfg_amax_info">Info</button>
+																<input id="cfg_amax_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 															</td>
 															<td style="width:100%"></td>
 														</tr>
@@ -742,22 +714,22 @@
 									</table>
 									<div style="height:10px"></div>
 									<div class="acm">
-										<button class="sbutton" onclick="closeRomInfo()">Close</button>
+										<button class="sbutton" id="closeRom">Close</button>
 									</div>
 								</div>
 								<div class="page" id="cfg_page_floppy">
 									<table style="border-collapse:collapse">
 										<tr><td colspan="2"><span class="label">Disk Floppies</span></td></tr>
 										<tr>
-											<td><input id="cfg_df0_enabled" type="checkbox" onchange="floppyEnable(0)" />DF0</td>
+											<td><input id="cfg_df0_enabled" type="checkbox" />DF0</td>
 											<td style="width:100%">
 												<table id="cfg_df0_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_df0_file').click()">Insert</button>
-															<button class="button" id="cfg_df0_eject" onclick="floppyEject(0)">Eject</button>
-															<button class="button" id="cfg_df0_info" onclick="floppyOpenInfo(0)">Info</button>
-															<input id="cfg_df0_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="floppyInsert(0)" />
+															<button class="button" id="cfg_df0_select">Insert</button>
+															<button class="button" id="cfg_df0_eject">Eject</button>
+															<button class="button" id="cfg_df0_info">Info</button>
+															<input id="cfg_df0_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td style="width:100%"></td>
 														<td>
@@ -779,15 +751,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_df1_enabled" type="checkbox" onchange="floppyEnable(1)" />DF1</td>
+											<td><input id="cfg_df1_enabled" type="checkbox" />DF1</td>
 											<td>
 												<table id="cfg_df1_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_df1_file').click()">Insert</button>
-															<button class="button" id="cfg_df1_eject" onclick="floppyEject(1)">Eject</button>
-															<button class="button" id="cfg_df1_info" onclick="floppyOpenInfo(1)">Info</button>
-															<input id="cfg_df1_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="floppyInsert(1)" />
+															<button class="button" id="cfg_df1_select">Insert</button>
+															<button class="button" id="cfg_df1_eject">Eject</button>
+															<button class="button" id="cfg_df1_info">Info</button>
+															<input id="cfg_df1_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td style="width:100%"></td>
 														<td>
@@ -809,15 +781,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_df2_enabled" type="checkbox" onchange="floppyEnable(2)" />DF2</td>
+											<td><input id="cfg_df2_enabled" type="checkbox" />DF2</td>
 											<td>
 												<table id="cfg_df2_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_df2_file').click()">Insert</button>
-															<button class="button" id="cfg_df2_eject" onclick="floppyEject(2)">Eject</button>
-															<button class="button" id="cfg_df2_info" onclick="floppyOpenInfo(2)">Info</button>
-															<input id="cfg_df2_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="floppyInsert(2)" />
+															<button class="button" id="cfg_df2_select">Insert</button>
+															<button class="button" id="cfg_df2_eject">Eject</button>
+															<button class="button" id="cfg_df2_info">Info</button>
+															<input id="cfg_df2_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td style="width:100%"></td>
 														<td>
@@ -839,15 +811,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_df3_enabled" type="checkbox" onchange="floppyEnable(3)" />DF3</td>
+											<td><input id="cfg_df3_enabled" type="checkbox" />DF3</td>
 											<td>
 												<table id="cfg_df3_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_df3_file').click()">Insert</button>
-															<button class="button" id="cfg_df3_eject" onclick="floppyEject(3)">Eject</button>
-															<button class="button" id="cfg_df3_info" onclick="floppyOpenInfo(3)">Info</button>
-															<input id="cfg_df3_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="floppyInsert(3)" />
+															<button class="button" id="cfg_df3_select">Insert</button>
+															<button class="button" id="cfg_df3_eject">Eject</button>
+															<button class="button" id="cfg_df3_info">Info</button>
+															<input id="cfg_df3_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td style="width:100%"></td>
 														<td>
@@ -901,22 +873,22 @@
 										<table style="width:100%">
 											<tr>
 												<td>
-													<select id="cfg_floppy_select_game" size="1" onchange="floppySelect(1)">
+													<select id="cfg_floppy_select_game" size="1">
 														<option value="0" selected="selected" style="display:none;">Game</option>
 													</select>
 												</td>
 												<td>
-													<select id="cfg_floppy_select_demo" size="1" onchange="floppySelect(2)">
+													<select id="cfg_floppy_select_demo" size="1">
 														<option value="0" selected="selected" style="display:none;">Demo</option>
 													</select>
 												</td>
 												<td>
-													<select id="cfg_floppy_select_demo_aga" size="1" onchange="floppySelect(3)">
+													<select id="cfg_floppy_select_demo_aga" size="1">
 														<option value="0" selected="selected" style="display:none;">Demo (AGA)</option>
 													</select>
 												</td>
 												<td>
-													<select id="cfg_floppy_select_tool" size="1" onchange="floppySelect(4)">
+													<select id="cfg_floppy_select_tool" size="1">
 														<option value="0" selected="selected" style="display:none;">Tool</option>
 													</select>
 												</td>
@@ -935,7 +907,7 @@
 											<option value="2">DF2</option>
 											<option value="3">DF3</option>
 										</select>
-										<select id="fc_type" size="1" onchange="floppyUpdate()">
+										<select id="fc_type" size="1">
 											<option value="1">3.5&quot; DD (880K)</option>
 											<option value="2">3.5&quot; HD (1760K)</option>
 											<option value="3">3.5&quot; PC-DD (720K)</option>
@@ -946,8 +918,8 @@
 										<input id="fc_label" type="text" style="width:60px" />
 										<input id="fc_ffs" type="checkbox" />FFS
 										<input id="fc_bootable" type="checkbox" />Bootable
-										<button class="button" onclick="floppyCreate(1)">Standard</button>
-										<button class="button" onclick="floppyCreate(2)">Custom</button>
+										<button class="button" id="fc_standard">Standard</button>
+										<button class="button" id="fc_custom">Custom</button>
 									</div>
 								</div>
 								<div class="page" id="cfg_page_floppy_info">
@@ -989,22 +961,22 @@
 									</table>
 									<div style="height:10px"></div>
 									<div class="acm">
-										<button class="button" onclick="floppyCloseInfo()">Close</button>
+										<button class="button" id="fc_close">Close</button>
 									</div>
 								</div>
 								<div class="page" id="cfg_page_mount">
 									<table style="border-collapse:collapse">
 										<tr><td colspan="2"><span class="label">Onboard IDE</span> <span class="info">(A600/A1200/A4000)</span></td></tr>
 										<tr>
-											<td><input id="cfg_mount_0_enabled" type="checkbox" onchange="mountEnable(0)" />IDE0</td>
+											<td><input id="cfg_mount_0_enabled" type="checkbox" />IDE0</td>
 											<td style="width:100%">
 												<table id="cfg_mount_0_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_0_file').click()">Select</button>
-															<button class="button" id="cfg_mount_0_remove" onclick="mountRemove(0)">Remove</button>
-															<button class="button" id="cfg_mount_0_setup" onclick="mountOpenSetup(0)">Setup</button>
-															<input id="cfg_mount_0_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(0)" />
+															<button class="button" id="cfg_mount_0_select">Select</button>
+															<button class="button" id="cfg_mount_0_remove">Remove</button>
+															<button class="button" id="cfg_mount_0_setup">Setup</button>
+															<input id="cfg_mount_0_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<td>
@@ -1029,15 +1001,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_mount_1_enabled" type="checkbox" onchange="mountEnable(1)" />IDE1</td>
+											<td><input id="cfg_mount_1_enabled" type="checkbox" />IDE1</td>
 											<td>
 												<table id="cfg_mount_1_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_1_file').click()">Select</button>
-															<button class="button" id="cfg_mount_1_remove" onclick="mountRemove(1)">Remove</button>
-															<button class="button" id="cfg_mount_1_setup" onclick="mountOpenSetup(1)">Setup</button>
-															<input id="cfg_mount_1_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(1)" />
+															<button class="button" id="cfg_mount_1_select">Select</button>
+															<button class="button" id="cfg_mount_1_remove">Remove</button>
+															<button class="button" id="cfg_mount_1_setup">Setup</button>
+															<input id="cfg_mount_1_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<td>
@@ -1062,15 +1034,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_mount_2_enabled" type="checkbox" onchange="mountEnable(2)" />IDE2</td>
+											<td><input id="cfg_mount_2_enabled" type="checkbox" />IDE2</td>
 											<td>
 												<table id="cfg_mount_2_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_2_file').click()">Select</button>
-															<button class="button" id="cfg_mount_2_remove" onclick="mountRemove(2)">Remove</button>
-															<button class="button" id="cfg_mount_2_setup" onclick="mountOpenSetup(2)">Setup</button>
-															<input id="cfg_mount_2_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(2)" />
+															<button class="button" id="cfg_mount_2_select">Select</button>
+															<button class="button" id="cfg_mount_2_remove">Remove</button>
+															<button class="button" id="cfg_mount_2_setup">Setup</button>
+															<input id="cfg_mount_2_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<td>
@@ -1095,15 +1067,15 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_mount_3_enabled" type="checkbox" onchange="mountEnable(3)" />IDE3</td>
+											<td><input id="cfg_mount_3_enabled" type="checkbox" />IDE3</td>
 											<td>
 												<table id="cfg_mount_3_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_3_file').click()">Select</button>
-															<button class="button" id="cfg_mount_3_remove" onclick="mountRemove(3)">Remove</button>
-															<button class="button" id="cfg_mount_3_setup" onclick="mountOpenSetup(3)">Setup</button>
-															<input id="cfg_mount_3_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(3)" />
+															<button class="button" id="cfg_mount_3_select">Select</button>
+															<button class="button" id="cfg_mount_3_remove">Remove</button>
+															<button class="button" id="cfg_mount_3_setup">Setup</button>
+															<input id="cfg_mount_3_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<td>
@@ -1130,14 +1102,14 @@
 										<tr><td colspan="2"><div style="height:10px"></div></td></tr>
 										<tr><td colspan="2"><span class="label">PCMCIA slot</span> <span class="info">(A600/A1200)</span></td></tr>
 										<tr>
-											<td><input id="cfg_mount_4_enabled" type="checkbox" onchange="mountEnable(4)" />SRAM</td>
+											<td><input id="cfg_mount_4_enabled" type="checkbox" />SRAM</td>
 											<td>
 												<table id="cfg_mount_4_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_4_file').click()">Select</button>
-															<button class="button" id="cfg_mount_4_remove" onclick="mountRemove(4)">Remove</button>
-															<input id="cfg_mount_4_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(4)" />
+															<button class="button" id="cfg_mount_4_select">Select</button>
+															<button class="button" id="cfg_mount_4_remove">Remove</button>
+															<input id="cfg_mount_4_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<td>
@@ -1151,14 +1123,14 @@
 											</td>
 										</tr>
 										<tr>
-											<td><input id="cfg_mount_5_enabled" type="checkbox" onchange="mountEnable(5)" />HD</td>
+											<td><input id="cfg_mount_5_enabled" type="checkbox" />HD</td>
 											<td>
 												<table id="cfg_mount_5_grp">
 													<tr>
 														<td>
-															<button class="button" onclick="document.getElementById('cfg_mount_5_file').click()">Select</button>
-															<button class="button" id="cfg_mount_5_remove" onclick="mountRemove(5)">Remove</button>
-															<input id="cfg_mount_5_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="mountSelect(5)" />
+															<button class="button" id="cfg_mount_5_select">Select</button>
+															<button class="button" id="cfg_mount_5_remove">Remove</button>
+															<input id="cfg_mount_5_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" />
 														</td>
 														<td class="arm" style="width:100%"></td>
 														<!--<td>
@@ -1185,21 +1157,21 @@
 										</tr>
 										<tr>
 											<td class="arm">Surfaces</td>
-											<td><input type="text" maxlength="10" id="cfg_mount_surfaces" onkeypress="return isDecKey(event)" /></td>
+											<td><input type="text" maxlength="10" id="cfg_mount_surfaces" /></td>
 											<td class="arm">Name</td>
 											<td><input type="text" maxlength="31" id="cfg_mount_devname" /></td>
 										</tr>
 										<tr>
 											<td class="arm">Sectors</td>
-											<td><input type="text" maxlength="10" id="cfg_mount_sectors" onkeypress="return isDecKey(event)" /></td>
+											<td><input type="text" maxlength="10" id="cfg_mount_sectors" /></td>
 											<td class="arm">Reserved</td>
-											<td><input type="text" maxlength="10" id="cfg_mount_reserved" onkeypress="return isDecKey(event)" /></td>
+											<td><input type="text" maxlength="10" id="cfg_mount_reserved" /></td>
 										</tr>
 										<tr>
 											<td class="arm">Blocksize</td>
-											<td><input type="text" maxlength="10" id="cfg_mount_blocksize" onkeypress="return isDecKey(event)" /></td>
+											<td><input type="text" maxlength="10" id="cfg_mount_blocksize" /></td>
 											<td class="arm">Bootpri</td>
-											<td><input type="text" maxlength="4" id="cfg_mount_bootpri" onkeypress="return isDecKey(event, true)" /></td>
+											<td><input type="text" maxlength="4" id="cfg_mount_bootpri" /></td>
 										</tr>
 										<!--<tr>
 											<td class="arm">Cylinders</td>
@@ -1208,12 +1180,12 @@
 									</table>
 									<div style="height:10px"></div>
 									<div class="acm">
-										<button class="button" onclick="mountCloseSetup(1)">Use</button>
-										<button class="button" onclick="mountCloseSetup(0)">Abort</button>
+										<button class="button" id="mount_use">Use</button>
+										<button class="button" id="mount_abort">Abort</button>
 									</div>
 								</div>
 								<div class="page" id="cfg_page_video">
-									<input id="cfg_video_enabled" type="checkbox" onchange="videoUpdate()" />Enabled
+									<input id="cfg_video_enabled" type="checkbox" />Enabled
 									<div id="cfg_video_grp">
 										<div style="height:10px"></div>
 										<table>
@@ -1226,11 +1198,11 @@
 											<tr>
 												<td class="arm">Mode</td>
 												<td>
-													<select id="cfg_video_api" size="1" onchange="videoUpdateAPI()">
+													<select id="cfg_video_api" size="1">
 														<option value="1">WebGL</option>
 														<option value="0">Canvas</option>
 													</select>
-													<select id="cfg_video_color_mode" size="1" onchange="videoUpdateCM()">
+													<select id="cfg_video_color_mode" size="1">
 														<option value="2">16 bits per pixel (R5G6B5)</option>
 														<option value="5">32 bits per pixel (RGBA)</option>
 													</select>
@@ -1270,7 +1242,7 @@
 											<tr>
 												<td class="arm">Vertical</td>
 												<td class="alm">
-													<select id="cfg_video_linemode" size="1" onchange="videoUpdateLineMode()">
+													<select id="cfg_video_linemode" size="1">
 														<option value="0">Single (256 PAL/200 NTSC lines)</option>
 														<option value="1">Double (512 PAL/400 NTSC lines)</option>
 														<option value="2">Scanlines (256-&gt;512/200-&gt;400 lines)</option>
@@ -1298,21 +1270,21 @@
 											</tr>
 											<tr>
 												<td class="arm">Brightness</td>
-												<td class="alm"><input id="cfg_video_brightness" type="text" maxlength="5" onkeypress="return isDecKey(event, true)" /> <span class="info">(-1000 to 1000)</span></td>
+												<td class="alm"><input id="cfg_video_brightness" type="text" maxlength="5" /> <span class="info">(-1000 to 1000)</span></td>
 												<td class="arm">Background</td>
-												<td class="alm"><input id="cfg_video_background" type="text" maxlength="6" onkeypress="return isHexKey(event)" />
+												<td class="alm"><input id="cfg_video_background" type="text" maxlength="6" />
 													<span class="info">(#rrggbb)</span> <a target="_blank" href="https://www.rapidtables.com/web/color/RGB_Color.htm">?</a>
 												</td>
 											</tr>
 											<tr>
 												<td class="arm">Contrast</td>
-												<td class="alm"><input id="cfg_video_contrast" type="text" maxlength="5" onkeypress="return isDecKey(event, true)" /> <span class="info">(-1000 to 1000)</span></td>
+												<td class="alm"><input id="cfg_video_contrast" type="text" maxlength="5" /> <span class="info">(-1000 to 1000)</span></td>
 												<td class="arm">Blend</td>
-												<td class="alm"><input id="cfg_video_alpha" type="text" maxlength="3" onkeypress="return isDecKey(event, false)" /> <span class="info">(0 to 255)</span></td>
+												<td class="alm"><input id="cfg_video_alpha" type="text" maxlength="3" /> <span class="info">(0 to 255)</span></td>
 											</tr>
 											<tr>
 												<td class="arm">Gamma</td>
-												<td class="alm"><input id="cfg_video_gamma" type="text" maxlength="5" onkeypress="return isDecKey(event, true)" /> <span class="info">(-1000 to 1000)</span></td>
+												<td class="alm"><input id="cfg_video_gamma" type="text" maxlength="5" /> <span class="info">(-1000 to 1000)</span></td>
 												<td colspan="2"></td>
 											</tr>
 											<tr>
@@ -1363,7 +1335,7 @@
 									</div>
 								</div>
 								<div class="page" id="cfg_page_audio">
-									<input id="cfg_audio_enabled" type="checkbox" onchange="audioUpdate()" />Enabled
+									<input id="cfg_audio_enabled" type="checkbox" />Enabled
 									<div id="cfg_audio_grp">
 										<div style="height:10px"></div>
 										<table>
@@ -1401,7 +1373,7 @@
 												</td>
 												<td class="arm">Mode</td>
 												<td>
-													<select id="cfg_audio_filter" size="1" onchange="filterUpdate()">
+													<select id="cfg_audio_filter" size="1">
 														<option value="0">Always off</option>
 														<option value="1">Emulated</option>
 														<option value="2">Always on</option>
@@ -1430,7 +1402,7 @@
 											<tr>
 												<td class="arm">Channels</td>
 												<td colspan="3">
-													<select id="cfg_audio_channels" size="1" onchange="channelsUpdate()">
+													<select id="cfg_audio_channels" size="1">
 														<option value="1">Mono</option>
 														<option value="2">Stereo</option>
 													</select>
@@ -1499,7 +1471,7 @@
 										<tr>
 											<td class="arm">Mouse</td>
 											<td>
-												<select id="cfg_ports_0" size="1" onchange="portUpdate(0)">
+												<select id="cfg_ports_0" size="1">
 													<option value="0">Disabled</option>
 													<option value="1">Mouse</option>
 													<option value="2">Joystick</option>
@@ -1634,7 +1606,7 @@
 										<tr>
 											<td class="arm">Game</td>
 											<td>
-												<select id="cfg_ports_1" size="1" onchange="portUpdate(1)">
+												<select id="cfg_ports_1" size="1">
 													<option value="0">Disabled</option>
 													<option value="2">Joystick</option>
 													<option value="3">Emulated</option>
@@ -1807,7 +1779,7 @@
 					</table>
 					<div style="height:10px"></div>
 					<div class="acm">
-						<button class="sbutton" id="cfg_start" onclick="advandedStart()">Start</button>
+						<button class="sbutton" id="cfg_start">Start</button>
 					</div>
 				</div>
 			</div>
@@ -1826,12 +1798,12 @@
 						<div id="controls">
 							<table>
 								<tr>
-									<td><button onclick="reset()">Reset</button></td>
-									<td><button onclick="stop()">Stop</button></td>
-									<td><button onclick="pause(1)" id="controls_pr">Pause</button></td>
-									<td><button onclick="mute(1)" id="controls_mp">Mute</button></td>
-									<td id="controls_screen"><button onclick="screen(1)" id="controls_sw">Screen</button></td>
-									<td id="controls_disk"><button onclick="dskchgOpen()">Disk</button></td>
+									<td><button id="controls_reset">Reset</button></td>
+									<td><button id="controls_stop">Stop</button></td>
+									<td><button id="controls_pr">Pause</button></td>
+									<td><button id="controls_mp">Mute</button></td>
+									<td id="controls_screen"><button id="controls_sw">Screen</button></td>
+									<td id="controls_disk"><button id="controls_do">Disk</button></td>
 								</tr>
 							</table>
 						</div>
@@ -1859,11 +1831,11 @@
 				<table>
 					<tr>
 						<td>
-							<select id="dskchg_select" size="1" onchange="dskchgSelect()">
+							<select id="dskchg_select" size="1">
 								<option value="">- select -</option>
 							</select>
 						</td>
-						<td><button onclick="dskchgClose()">Abort</button></td>
+						<td><button id="dskchg_abort">Abort</button></td>
 					</tr>
 				</table>
 			</div>
@@ -1878,10 +1850,10 @@
 								<option value="3">DF3</option>
 							</select>
 						</td>
-						<td><input id="dskchg_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" onchange="dskchgInsert()" /></td>
-						<td><button onclick="document.getElementById('dskchg_file').click()">Insert</button></td>
-						<td><button onclick="dskchgEject()">Eject</button></td>
-						<td><button onclick="dskchgClose()">Abort</button></td>
+						<td><input id="dskchg_file" type="file" style="position:absolute;left:-10000px;top:-10000px;" /></td>
+						<td><button id="dskchg_insert">Insert</button></td>
+						<td><button id="dskchg_eject">Eject</button></td>
+						<td><button id="dskchg_abort2">Abort</button></td>
 					</tr>
 				</table>
 			</div>

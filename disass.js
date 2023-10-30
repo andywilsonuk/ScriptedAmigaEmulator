@@ -1,3 +1,5 @@
+import { ScriptedDisAssembler } from './sae/disassembler'
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -199,4 +201,8 @@ function updShowAddr() {
 function updShowCode() {
 	showCode = document.getElementById("cfg_showCode").checked;
 	disass();
+}
+
+window.onload = () => {
+	init();
 }

@@ -1077,555 +1077,560 @@ function SAEO_Keyboard() {
 	};
 }
 
-function SAEO_Input() {
-	this.mouse = new SAEO_Mouse(0);
-	this.joystick = [new SAEO_Joystick(0), new SAEO_Joystick(1)];
-	this.keyboard = new SAEO_Keyboard();
+export class SAEO_Input {
+	constructor() {
+		this.mouse = new SAEO_Mouse(0);
+		this.joystick = [new SAEO_Joystick(0), new SAEO_Joystick(1)];
+		this.keyboard = new SAEO_Keyboard();
 
-	//const mouse_pullup = true; /* fire/left mouse button pullup resistors enabled? */
+		//const mouse_pullup = true; /* fire/left mouse button pullup resistors enabled? */
+		var mouse_x = [0, 0, 0, 0];
+		var mouse_y = [0, 0, 0, 0];
+		var mouse_frame_x = [0, 0, 0, 0];
+		var mouse_frame_y = [0, 0, 0, 0];
+		var mouse_delta = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+		var mouse_deltanoreset = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+		var joybutton = [0, 0, 0, 0];
+		var joydir = [0, 0, 0, 0];
+		var joydirpot = [[0, 0], [0, 0], [0, 0], [0, 0]];
 
-	var mouse_x = [0,0,0,0];
-	var mouse_y = [0,0,0,0];
-	var mouse_frame_x = [0,0,0,0];
-	var mouse_frame_y = [0,0,0,0];
-	var mouse_delta = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-	var mouse_deltanoreset = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-	var joybutton = [0,0,0,0];
-	var joydir = [0,0,0,0];
-	var joydirpot = [[0,0],[0,0],[0,0],[0,0]];
+		var oleft = [0, 0, 0, 0];
+		var oright = [0, 0, 0, 0];
+		var otop = [0, 0, 0, 0];
+		var obot = [0, 0, 0, 0];
+		var horizclear = [false, false, false, false];
+		var vertclear = [false, false, false, false];
 
-	var oleft = [0,0,0,0];
-	var oright = [0,0,0,0];
-	var otop = [0,0,0,0];
-	var obot = [0,0,0,0];
-	var horizclear = [false,false,false,false];
-	var vertclear = [false,false,false,false];
+		//var parport_joystick_enabled = false; //->config
+		var mouse_port = [false, false];
+		var analog_port = [[false, false], [false, false]];
+		var digital_port = [[false, false], [false, false]];
+		//var cd32_pad_enabled = [false,false];
+		//var cd32_shifter = [8,8];
+		//var relativecount = [[0,0],[0,0],[0,0],[0,0]];
+		var potgo_value = 0; //u16
+		var pot_cap = [[0, 0], [0, 0]];
+		var pot_dat = [[0, 0], [0, 0]]; //u8
+		var pot_dat_act = [[0, 0], [0, 0]];
+		const POTDAT_DELAY_PAL = 8;
+		const POTDAT_DELAY_NTSC = 7;
 
-	//var parport_joystick_enabled = false; //->config
-	var mouse_port = [false,false];
-	var analog_port = [[false,false],[false,false]];
-	var digital_port = [[false,false],[false,false]];
-	//var cd32_pad_enabled = [false,false];
-	//var cd32_shifter = [8,8];
-	//var relativecount = [[0,0],[0,0],[0,0],[0,0]];
+		var input_vpos = 0, input_frame = 0;
 
-	var potgo_value = 0; //u16
-	var pot_cap = [[0,0],[0,0]];
-	var pot_dat = [[0,0],[0,0]]; //u8
-	var pot_dat_act = [[0,0],[0,0]];
-	const POTDAT_DELAY_PAL = 8;
-	const POTDAT_DELAY_NTSC = 7;
+		function input_queue_struct() {
+			this.port = 0;
+			this.id = 0;
+			this.arg1 = 0;
+			this.arg2 = 0;
+			this.linecnt = 0;
+			this.nextlinecnt = 0;
+			/*ORG
+			this.evt = 0;
+			this.storedstate = 0;
+			this.state = 0;
+			this.max = 0;
+			this.linecnt = 0;
+			this.nextlinecnt = 0;
+			this.custom = '';*/
+		};
+		const INPUT_QUEUE_SIZE = 16;
+		var input_queue = null;
 
-	var input_vpos = 0, input_frame = 0;
+		/*---------------------------------*/
+		/*function getbuttonstate(joy, button) { //OPT inline ok
+			//return (joybutton[joy] & (1 << button)) != 0;
+			return (joybutton[joy] & button) != 0;
+		}*/
+		/*---------------------------------*/
+		/* caps */
+		/* p5 is 1 or floating = cd32 2-button mode */
+		/*function cd32padmode(p5dir, p5dat) {
+			return (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir))) == false;
+		}*/
+		/*function is_joystick_pullup(joy) {
+			//return joymodes[joy] == JSEM_MODE_GAMEPAD;
+			return true;
+		}
+		function is_mouse_pullup(joy) {
+			return mouse_pullup;
+		}*/
+		/*function cap_charge(joy, idx, charge) { OPT inline ok
+			if (charge < -1 || charge > 1)
+				charge = charge * 80;
+			pot_cap[joy][idx] += charge;
+			if (pot_cap[joy][idx] < 0)
+				pot_cap[joy][idx] = 0;
+			if (pot_cap[joy][idx] > 511)
+				pot_cap[joy][idx] = 511;
+		}*/
+		function cap_check() {
+			for (var joy = 0; joy < 2; joy++) {
+				for (var i = 0; i < 2; i++) {
+					var pdir = 0x0200 << ((joy << 2) + (i << 1)); // output enable
+					var pdat = 0x0100 << ((joy << 2) + (i << 1)); // data
 
-	function input_queue_struct() {
-		this.port = 0;
-		this.id = 0;
-		this.arg1 = 0;
-		this.arg2 = 0;
-		this.linecnt = 0;
-		this.nextlinecnt = 0;
-		/*ORG
-		this.evt = 0;
-		this.storedstate = 0;
-		this.state = 0;
-		this.max = 0;
-		this.linecnt = 0;
-		this.nextlinecnt = 0;
-		this.custom = '';*/
-	};
-	const INPUT_QUEUE_SIZE = 16;
-	var input_queue = null;
 
-	/*---------------------------------*/
 
-	/*function getbuttonstate(joy, button) { //OPT inline ok
-		//return (joybutton[joy] & (1 << button)) != 0;
-		return (joybutton[joy] & button) != 0;
-	}*/
+					//var p5dir = 0x0200 << ((joy << 2));
+					//var p5dat = 0x0100 << ((joy << 2));
+					//var isbutton = getbuttonstate(joy, i == 0 ? SAEC_Input_Button_3 : SAEC_Input_Button_2);
+					var isbutton = (joybutton[joy] & (i == 0 ? SAEC_Input_Button_3 : SAEC_Input_Button_2)) != 0;
 
-	/*---------------------------------*/
-	/* caps */
-
-	/* p5 is 1 or floating = cd32 2-button mode */
-	/*function cd32padmode(p5dir, p5dat) {
-		return (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir))) == false;
-	}*/
-
-	/*function is_joystick_pullup(joy) {
-		//return joymodes[joy] == JSEM_MODE_GAMEPAD;
-		return true;
-	}
-	function is_mouse_pullup(joy) {
-		return mouse_pullup;
-	}*/
-
-	/*function cap_charge(joy, idx, charge) { OPT inline ok
-		if (charge < -1 || charge > 1)
-			charge = charge * 80;
-		pot_cap[joy][idx] += charge;
-		if (pot_cap[joy][idx] < 0)
-			pot_cap[joy][idx] = 0;
-		if (pot_cap[joy][idx] > 511)
-			pot_cap[joy][idx] = 511;
-	}*/
-	function cap_check() {
-		for (var joy = 0; joy < 2; joy++) {
-			for (var i = 0; i < 2; i++) {
-				var pdir = 0x0200 << ((joy << 2) + (i << 1)); // output enable
-				var pdat = 0x0100 << ((joy << 2) + (i << 1)); // data
-				//var p5dir = 0x0200 << ((joy << 2));
-				//var p5dat = 0x0100 << ((joy << 2));
-				//var isbutton = getbuttonstate(joy, i == 0 ? SAEC_Input_Button_3 : SAEC_Input_Button_2);
-				var isbutton = (joybutton[joy] & (i == 0 ? SAEC_Input_Button_3 : SAEC_Input_Button_2)) != 0;
-
-				/*if (cd32_pad_enabled[joy]) {
-					// only red and blue can be read if CD32 pad and only if it is in normal pad mode
-					isbutton |= getbuttonstate(joy, JOYBUTTON_CD32_BLUE);
-					// CD32 pad 3rd button line (P5) is always floating
-					if (i == 0)
-						isbutton = 0;
-					if (cd32padmode(p5dir, p5dat))
-						continue;
-				}*/
-
-				var dong = SAER.dongle.analogjoy(joy, i);
-				var charge = 0, joypot = 0;
-				if (dong >= 0) {
-					isbutton = 0;
-					joypot = dong;
-					if (pot_cap[joy][i] < joypot)
-						charge = 1; // slow charge via dongle resistor
-				} else {
-					/*joypot = joydirpot[joy][i];
-					if (analog_port[joy][i] && pot_cap[joy][i] < joypot)
-						charge = 1;*/ // slow charge via pot variable resistor
-					//if ((is_joystick_pullup(joy) && digital_port[joy][i]) || (mouse_port[joy] && is_mouse_pullup(joy)))
-					if (digital_port[joy][i] || mouse_port[joy])
-						charge = 1; // slow charge via pull-up resistor
-				}
-
-				if (!(potgo_value & pdir)) { // input?
-					if (pot_dat_act[joy][i])
-						pot_dat[joy][i]++;
-					// first 7 or 8 lines after potgo has been started = discharge cap
-					if (pot_dat_act[joy][i] == 1) {
-						if (pot_dat[joy][i] < (SAEV_config.chipset.ntsc ? POTDAT_DELAY_NTSC : POTDAT_DELAY_PAL))
-							charge = -2; // fast discharge delay
-						else {
-							pot_dat_act[joy][i] = 2;
-							pot_dat[joy][i] = 0;
-						}
-					}
+					/*if (cd32_pad_enabled[joy]) {
+						// only red and blue can be read if CD32 pad and only if it is in normal pad mode
+						isbutton |= getbuttonstate(joy, JOYBUTTON_CD32_BLUE);
+						// CD32 pad 3rd button line (P5) is always floating
+						if (i == 0)
+							isbutton = 0;
+						if (cd32padmode(p5dir, p5dat))
+							continue;
+					}*/
+					var dong = SAER.dongle.analogjoy(joy, i);
+					var charge = 0, joypot = 0;
 					if (dong >= 0) {
-						if (pot_dat_act[joy][i] == 2 && pot_cap[joy][i] >= joypot)
-							pot_dat_act[joy][i] = 0;
+						isbutton = 0;
+						joypot = dong;
+						if (pot_cap[joy][i] < joypot)
+							charge = 1; // slow charge via dongle resistor
 					} else {
-						/*if (analog_port[joy][i] && pot_dat_act[joy][i] == 2 && pot_cap[joy][i] >= joypot)
-							pot_dat_act[joy][i] = 0;*/
-						if ((digital_port[joy][i] || mouse_port[joy]) && pot_dat_act[joy][i] == 2) {
-							if (pot_cap[joy][i] >= 10 && !isbutton)
+						/*joypot = joydirpot[joy][i];
+						if (analog_port[joy][i] && pot_cap[joy][i] < joypot)
+							charge = 1;*/ // slow charge via pot variable resistor
+						//if ((is_joystick_pullup(joy) && digital_port[joy][i]) || (mouse_port[joy] && is_mouse_pullup(joy)))
+						if (digital_port[joy][i] || mouse_port[joy])
+							charge = 1; // slow charge via pull-up resistor
+					}
+
+					if (!(potgo_value & pdir)) { // input?
+						if (pot_dat_act[joy][i])
+							pot_dat[joy][i]++;
+						// first 7 or 8 lines after potgo has been started = discharge cap
+						if (pot_dat_act[joy][i] == 1) {
+							if (pot_dat[joy][i] < (SAEV_config.chipset.ntsc ? POTDAT_DELAY_NTSC : POTDAT_DELAY_PAL))
+								charge = -2; // fast discharge delay
+							else {
+								pot_dat_act[joy][i] = 2;
+								pot_dat[joy][i] = 0;
+							}
+						}
+						if (dong >= 0) {
+							if (pot_dat_act[joy][i] == 2 && pot_cap[joy][i] >= joypot)
 								pot_dat_act[joy][i] = 0;
+						} else {
+							/*if (analog_port[joy][i] && pot_dat_act[joy][i] == 2 && pot_cap[joy][i] >= joypot)
+								pot_dat_act[joy][i] = 0;*/
+							if ((digital_port[joy][i] || mouse_port[joy]) && pot_dat_act[joy][i] == 2) {
+								if (pot_cap[joy][i] >= 10 && !isbutton)
+									pot_dat_act[joy][i] = 0;
+							}
 						}
+					} else { // output?
+						charge = (potgo_value & pdat) ? 2 : -2; // fast (dis)charge if output
+						if (potgo_value & pdat)
+							pot_dat_act[joy][i] = 0; // instant stop if output+high
+						if (isbutton)
+							pot_dat[joy][i]++; // "free running" if output+low
 					}
-				} else { // output?
-					charge = (potgo_value & pdat) ? 2 : -2; // fast (dis)charge if output
-					if (potgo_value & pdat)
-						pot_dat_act[joy][i] = 0; // instant stop if output+high
+
 					if (isbutton)
-						pot_dat[joy][i]++; // "free running" if output+low
-				}
+						charge = -2; // button press overrides everything
 
-				if (isbutton)
-					charge = -2; // button press overrides everything
 
-				/*if (currprefs.cs_cdtvcd) {
-					// CDTV P9 is not floating
-					if (charge == 0 && !(potgo_value & pdir) && i == 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					/*if (currprefs.cs_cdtvcd) {
+						// CDTV P9 is not floating
+						if (charge == 0 && !(potgo_value & pdir) && i == 1)
+							charge = 2;
+					}
+					// CD32 pad in 2-button mode: blue button is not floating
+					if (charge == 0 && cd32_pad_enabled[joy] && i == 1)
+						charge = 2;*/
+					// official Commodore mouse has pull-up resistors in button lines. NOTE: 3rd party mice may not have pullups!
+					//if (charge == 0 && dong < 0 && digital_port[joy][i] && is_mouse_pullup(joy) && mouse_port[joy])
+					/*if (charge == 0 && dong < 0 && digital_port[joy][i] && mouse_port[joy])
+						charge = 2;*/
+					// emulate pullup resistor if button mapped because there too many broken programs that read second button in input-mode (and most 2+ button pads have pullups)
+					//if (charge == 0 && dong < 0 && digital_port[joy][i] && is_joystick_pullup(joy))
+					if (charge == 0 && dong < 0 && digital_port[joy][i])
 						charge = 2;
-				}
-				// CD32 pad in 2-button mode: blue button is not floating
-				if (charge == 0 && cd32_pad_enabled[joy] && i == 1)
-					charge = 2;*/
 
-				// official Commodore mouse has pull-up resistors in button lines. NOTE: 3rd party mice may not have pullups!
-				//if (charge == 0 && dong < 0 && digital_port[joy][i] && is_mouse_pullup(joy) && mouse_port[joy])
-				/*if (charge == 0 && dong < 0 && digital_port[joy][i] && mouse_port[joy])
-					charge = 2;*/
-				// emulate pullup resistor if button mapped because there too many broken programs that read second button in input-mode (and most 2+ button pads have pullups)
-				//if (charge == 0 && dong < 0 && digital_port[joy][i] && is_joystick_pullup(joy))
-				if (charge == 0 && dong < 0 && digital_port[joy][i])
-					charge = 2;
-
-				//cap_charge(joy, i, charge);
-				if (charge) {
-					if (charge < -1 || charge > 1)
-						charge = charge * 80;
-					pot_cap[joy][i] += charge;
-					if (pot_cap[joy][i] < 0)
-						pot_cap[joy][i] = 0;
-					if (pot_cap[joy][i] > 511)
-						pot_cap[joy][i] = 511;
+					//cap_charge(joy, i, charge);
+					if (charge) {
+						if (charge < -1 || charge > 1)
+							charge = charge * 80;
+						pot_cap[joy][i] += charge;
+						if (pot_cap[joy][i] < 0)
+							pot_cap[joy][i] = 0;
+						if (pot_cap[joy][i] > 511)
+							pot_cap[joy][i] = 511;
+					}
 				}
 			}
 		}
-	}
 
-	/*---------------------------------*/
-	/* CIA access */
+		/*---------------------------------*/
+		/* CIA access */
+		this.handle_joystick_buttons = function (pra, dra) {
+			var but = 0; //u8
 
-	this.handle_joystick_buttons = function(pra, dra) {
-		var but = 0; //u8
+			cap_check();
 
-		cap_check();
+			for (var i = 0; i < 2; i++) {
+				var mask = 0x40 << i;
 
-		for (var i = 0; i < 2; i++) {
-			var mask = 0x40 << i;
-
-			/*if (cd32_pad_enabled[i]) {
-				var p5dir = 0x0200 << (i * 4);
-				var p5dat = 0x0100 << (i * 4);
-				but |= mask;
-				if (!cd32padmode(p5dir, p5dat)) {
-					if (getbuttonstate(i, JOYBUTTON_CD32_RED) || getbuttonstate(i, SAEC_Input_Button_1))
-						but &= ~mask;
-				}
-			} else*/
-			{
-				//if (!getbuttonstate(i, SAEC_Input_Button_1))
-				if ((joybutton[i] & SAEC_Input_Button_1) == 0)
+				/*if (cd32_pad_enabled[i]) {
+					var p5dir = 0x0200 << (i * 4);
+					var p5dat = 0x0100 << (i * 4);
 					but |= mask;
-
-				/*if (bouncy && bouncy_cycles - SAEV_Events_currcycle > 0) {
-					but &= ~mask;
-					if (Math.random() > 0.5)
+					if (!cd32padmode(p5dir, p5dat)) {
+						if (getbuttonstate(i, JOYBUTTON_CD32_RED) || getbuttonstate(i, SAEC_Input_Button_1))
+							but &= ~mask;
+					}
+				} else*/
+				{
+					//if (!getbuttonstate(i, SAEC_Input_Button_1))
+					if ((joybutton[i] & SAEC_Input_Button_1) == 0)
 						but |= mask;
-				}*/
-				if (dra & mask)
-					but = (but & ~mask) | (pra & mask);
+
+					/*if (bouncy && bouncy_cycles - SAEV_Events_currcycle > 0) {
+						but &= ~mask;
+						if (Math.random() > 0.5)
+							but |= mask;
+					}*/
+					if (dra & mask)
+						but = (but & ~mask) | (pra & mask);
+				}
 			}
-		}
-		return but;
-	}
+			return but;
+		};
 
-	/*function parconvert(v, jd, shift) { //OPT inline ok
-		if (jd & SAEC_Input_Direction_Up)		v &= ~(1 << shift);
-		if (jd & SAEC_Input_Direction_Down)	v &= ~(2 << shift);
-		if (jd & SAEC_Input_Direction_Left)	v &= ~(4 << shift);
-		if (jd & SAEC_Input_Direction_Right)	v &= ~(8 << shift);
-		return v;
-	}*/
-	this.handle_parport_joystick = function(port, pra, dra) {
-		switch (port) {
-			case 0: {
-				var v = (pra & dra) | (dra ^ 0xff);
-				/*if (parport_joystick_enabled) {
-					//v = parconvert(v, joydir[2], 0);
-					//v = parconvert(v, joydir[3], 4);
-
-					if (joydir[2] & SAEC_Input_Direction_Up)		v &= ~1;
-					if (joydir[2] & SAEC_Input_Direction_Down)	v &= ~2;
-					if (joydir[2] & SAEC_Input_Direction_Left)	v &= ~4;
-					if (joydir[2] & SAEC_Input_Direction_Right)	v &= ~8;
-
-					if (joydir[3] & SAEC_Input_Direction_Up)		v &= ~16;
-					if (joydir[3] & SAEC_Input_Direction_Down)	v &= ~32;
-					if (joydir[3] & SAEC_Input_Direction_Left)	v &= ~64;
-					if (joydir[3] & SAEC_Input_Direction_Right)	v &= ~128;
-				}*/
-				return v;
+		/*function parconvert(v, jd, shift) { //OPT inline ok
+			if (jd & SAEC_Input_Direction_Up)		v &= ~(1 << shift);
+			if (jd & SAEC_Input_Direction_Down)	v &= ~(2 << shift);
+			if (jd & SAEC_Input_Direction_Left)	v &= ~(4 << shift);
+			if (jd & SAEC_Input_Direction_Right)	v &= ~(8 << shift);
+			return v;
+		}*/
+		this.handle_parport_joystick = function (port, pra, dra) {
+			switch (port) {
+				case 0: {
+					var v = (pra & dra) | (dra ^ 0xff);
+					/*if (parport_joystick_enabled) {
+						//v = parconvert(v, joydir[2], 0);
+						//v = parconvert(v, joydir[3], 4);
+    
+						if (joydir[2] & SAEC_Input_Direction_Up)		v &= ~1;
+						if (joydir[2] & SAEC_Input_Direction_Down)	v &= ~2;
+						if (joydir[2] & SAEC_Input_Direction_Left)	v &= ~4;
+						if (joydir[2] & SAEC_Input_Direction_Right)	v &= ~8;
+    
+						if (joydir[3] & SAEC_Input_Direction_Up)		v &= ~16;
+						if (joydir[3] & SAEC_Input_Direction_Down)	v &= ~32;
+						if (joydir[3] & SAEC_Input_Direction_Left)	v &= ~64;
+						if (joydir[3] & SAEC_Input_Direction_Right)	v &= ~128;
+					}*/
+					return v;
+				}
+				case 1: {
+					var v = ((pra & dra) | (dra ^ 0xff)) & 0x7;
+					/*if (parport_joystick_enabled) {
+						if (getbuttonstate(2, SAEC_Input_Button_1))
+							v &= ~4;
+						if (getbuttonstate(3, SAEC_Input_Button_1))
+							v &= ~1;
+						if (getbuttonstate(2, SAEC_Input_Button_2) || getbuttonstate(3, SAEC_Input_Button_2))
+							v &= ~2; //spare
+					}*/
+					return v;
+				}
+				default:
+					//abort();
+					return 0;
 			}
-			case 1: {
-				var v = ((pra & dra) | (dra ^ 0xff)) & 0x7;
-				/*if (parport_joystick_enabled) {
-					if (getbuttonstate(2, SAEC_Input_Button_1))
-						v &= ~4;
-					if (getbuttonstate(3, SAEC_Input_Button_1))
-						v &= ~1;
-					if (getbuttonstate(2, SAEC_Input_Button_2) || getbuttonstate(3, SAEC_Input_Button_2))
-						v &= ~2; //spare
-				}*/
-				return v;
-			}
-			default:
-				//abort();
-				return 0;
-		}
-	}
+		};
 
-	//var oldstate = [0,0]; //fix reset
-	/*this.handle_cd32_joystick_cia = function(pra, dra) {
-		cap_check();
-		for (var i = 0; i < 2; i++) {
-			if (cd32_pad_enabled[i]) { //OWN
-				var but = 0x40 << i;
-				var p5dir = 0x0200 << (i * 4); // output enable P5
-				var p5dat = 0x0100 << (i * 4); // data P5
-				if (cd32padmode(p5dir, p5dat)) {
-					if ((dra & but) && (pra & but) != oldstate[i]) {
-						if (!(pra & but)) {
-							cd32_shifter[i]--;
-							if (cd32_shifter[i] < 0)
-								cd32_shifter[i] = 0;
+		//var oldstate = [0,0]; //fix reset
+		/*this.handle_cd32_joystick_cia = function(pra, dra) {
+			cap_check();
+			for (var i = 0; i < 2; i++) {
+				if (cd32_pad_enabled[i]) { //OWN
+					var but = 0x40 << i;
+					var p5dir = 0x0200 << (i * 4); // output enable P5
+					var p5dat = 0x0100 << (i * 4); // data P5
+					if (cd32padmode(p5dir, p5dat)) {
+						if ((dra & but) && (pra & but) != oldstate[i]) {
+							if (!(pra & but)) {
+								cd32_shifter[i]--;
+								if (cd32_shifter[i] < 0)
+									cd32_shifter[i] = 0;
+							}
 						}
 					}
 				}
+				oldstate[i] = dra & pra & but;
 			}
-			oldstate[i] = dra & pra & but;
-		}
-	}*/
-
-	/*---------------------------------*/
-	/* mouse */
-
-	function getvelocity(num, subnum, pct) {
-		if (pct > 1000)
-			pct = 1000;
-
-		var val = mouse_delta[num][subnum];
-		var v = ~~(val * pct / 1000);
-		if (!v) {
-			var maxvpos = SAER.playfield.get_maxvpos();
-
-			if (val < -maxvpos >> 1)
-				v = -2;
-			else if (val < 0)
-				v = -1;
-			else if (val > maxvpos >> 1)
-				v = 2;
-			else if (val > 0)
-				v = 1;
-		}
-		if (!mouse_deltanoreset[num][subnum])
-			mouse_delta[num][subnum] -= v;
-
-		return v;
-	}
-
-	/*var mxd = 0, myd = 0; //fix reset
-	var mouseedge_x = 0, mouseedge_y = 0, mouseedge_time = 0;
-	const MOUSEEDGE_RANGE = 100;
-	const MOUSEEDGE_TIME = 2;*/
-	function mouseupdate(pct, vsync) {
-		//static int mxd, myd;
-		const MOUSEXY_MAX = 16384;
-		const max = 120;
-
-		/*mouseedge
-		if (vsync) {
-			if (mxd < 0) {
-				if (mouseedge_x > 0) mouseedge_x = 0; else mouseedge_x += mxd;
-				mouseedge_time = MOUSEEDGE_TIME;
-			}
-			if (mxd > 0) {
-				if (mouseedge_x < 0) mouseedge_x = 0; else mouseedge_x += mxd;
-				mouseedge_time = MOUSEEDGE_TIME;
-			}
-			if (myd < 0) {
-				if (mouseedge_y > 0) mouseedge_y = 0; else mouseedge_y += myd;
-				mouseedge_time = MOUSEEDGE_TIME;
-			}
-			if (myd > 0) {
-				if (mouseedge_y < 0) mouseedge_y = 0; else mouseedge_y += myd;
-				mouseedge_time = MOUSEEDGE_TIME;
-			}
-			if (mouseedge_time > 0) {
-				mouseedge_time--;
-				if (mouseedge_time == 0)
-					mouseedge_x = mouseedge_y = 0;
-			}
-			mxd = myd = 0;
 		}*/
+		/*---------------------------------*/
+		/* mouse */
+		function getvelocity(num, subnum, pct) {
+			if (pct > 1000)
+				pct = 1000;
 
-		for (var i = 0; i < 2; i++) {
-			if (mouse_port[i]) {
+			var val = mouse_delta[num][subnum];
+			var v = ~~(val * pct / 1000);
+			if (!v) {
+				var maxvpos = SAER.playfield.get_maxvpos();
 
-				var v = getvelocity(i, 0, pct);
-				//mxd += v;
-				mouse_x[i] += v;
-				if (mouse_x[i] < 0) {
-					mouse_x[i] += MOUSEXY_MAX;
-					mouse_frame_x[i] = mouse_x[i] - v;
-				}
-				if (mouse_x[i] >= MOUSEXY_MAX) {
-					mouse_x[i] -= MOUSEXY_MAX;
-					mouse_frame_x[i] = mouse_x[i] - v;
-				}
-
-				v = getvelocity(i, 1, pct);
-				//myd += v;
-				mouse_y[i] += v;
-				if (mouse_y[i] < 0) {
-					mouse_y[i] += MOUSEXY_MAX;
-					mouse_frame_y[i] = mouse_y[i] - v;
-				}
-				if (mouse_y[i] >= MOUSEXY_MAX) {
-					mouse_y[i] -= MOUSEXY_MAX;
-					mouse_frame_y[i] = mouse_y[i] - v;
-				}
-
-				/*v = getvelocity(i, 2, pct);
-				if (v > 0)
-					record_key (0x7a << 1);
-				else if (v < 0)
-					record_key (0x7b << 1);*/
-
-				if (!mouse_deltanoreset[i][2])
-					mouse_delta[i][2] = 0;
-
-				if (mouse_frame_x[i] - mouse_x[i] > max) {
-					mouse_x[i] = mouse_frame_x[i] - max;
-					mouse_x[i] &= MOUSEXY_MAX - 1;
-				}
-				if (mouse_frame_x[i] - mouse_x[i] < -max) {
-					mouse_x[i] = mouse_frame_x[i] + max;
-					mouse_x[i] &= MOUSEXY_MAX - 1;
-				}
-				if (mouse_frame_y[i] - mouse_y[i] > max)
-					mouse_y[i] = mouse_frame_y[i] - max;
-				if (mouse_frame_y[i] - mouse_y[i] < -max)
-					mouse_y[i] = mouse_frame_y[i] + max;
+				if (val < -maxvpos >> 1)
+					v = -2;
+				else if (val < 0)
+					v = -1;
+				else if (val > maxvpos >> 1)
+					v = 2;
+				else if (val > 0)
+					v = 1;
 			}
+			if (!mouse_deltanoreset[num][subnum])
+				mouse_delta[num][subnum] -= v;
 
-			if (!vsync) {
-				mouse_frame_x[i] = mouse_x[i];
-				mouse_frame_y[i] = mouse_y[i];
-			}
+			return v;
 		}
 
-		/*if (lightpen_delta[0]) {
-			lightpen_x += lightpen_delta[0];
-			if (!lightpen_deltanoreset[0])
-				lightpen_delta[0] = 0;
-		}
-		if (lightpen_delta[1]) {
-			lightpen_y += lightpen_delta[1];
-			if (!lightpen_deltanoreset[1])
-				lightpen_delta[1] = 0;
-		}*/
-	}
+		/*var mxd = 0, myd = 0; //fix reset
+		var mouseedge_x = 0, mouseedge_y = 0, mouseedge_time = 0;
+		const MOUSEEDGE_RANGE = 100;
+		const MOUSEEDGE_TIME = 2;*/
+		function mouseupdate(pct, vsync) {
+			//static int mxd, myd;
+			const MOUSEXY_MAX = 16384;
+			const max = 120;
 
-	function readinput() { //readinput
-		var vpos = SAER.playfield.get_vpos();
-		var maxvpos = SAER_Playfield_current_maxvpos();
-		var totalvpos = input_frame * maxvpos + vpos;
-		var diff = totalvpos - input_vpos;
-		//SAEF_log("Input.readinput() %d/%d : %d -> %d", vpos, maxvpos, diff, (diff * 1000 / maxvpos) >>> 0);
-		if (diff > 0) {
-			if (diff < 10)
-				mouseupdate(0, false);
-			else
-				mouseupdate((diff * 1000 / maxvpos) >>> 0, false);
-		}
-		input_vpos = totalvpos;
-	}
+			/*mouseedge
+			if (vsync) {
+				if (mxd < 0) {
+					if (mouseedge_x > 0) mouseedge_x = 0; else mouseedge_x += mxd;
+					mouseedge_time = MOUSEEDGE_TIME;
+				}
+				if (mxd > 0) {
+					if (mouseedge_x < 0) mouseedge_x = 0; else mouseedge_x += mxd;
+					mouseedge_time = MOUSEEDGE_TIME;
+				}
+				if (myd < 0) {
+					if (mouseedge_y > 0) mouseedge_y = 0; else mouseedge_y += myd;
+					mouseedge_time = MOUSEEDGE_TIME;
+				}
+				if (myd > 0) {
+					if (mouseedge_y < 0) mouseedge_y = 0; else mouseedge_y += myd;
+					mouseedge_time = MOUSEEDGE_TIME;
+				}
+				if (mouseedge_time > 0) {
+					mouseedge_time--;
+					if (mouseedge_time == 0)
+						mouseedge_x = mouseedge_y = 0;
+				}
+				mxd = myd = 0;
+			}*/
+			for (var i = 0; i < 2; i++) {
+				if (mouse_port[i]) {
 
-	/*---------------------------------*/
-
-	function joymousecounter(joy) {
-		var left = (joydir[joy] & SAEC_Input_Direction_Left) ? 0 : 1;
-		var right = (joydir[joy] & SAEC_Input_Direction_Right) ? 0 : 1;
-		var top = (joydir[joy] & SAEC_Input_Direction_Up) ? 0 : 1;
-		var bot = (joydir[joy] & SAEC_Input_Direction_Down) ? 0 : 1;
-
-		var b0 = (bot ^ right) ? 1 : 0;
-		var b1 = (right ^ 1) ? 2 : 0;
-		var b8 = (top ^ left) ? 1 : 0;
-		var b9 = (left ^ 1) ? 2 : 0;
-
-		var cntx = b0 | b1;
-		var cnty = b8 | b9;
-		var ocntx = mouse_x[joy] & 3;
-		var ocnty = mouse_y[joy] & 3;
-
-			  if (cntx == 3 && ocntx == 0) mouse_x[joy] -= 4;
-		else if (cntx == 0 && ocntx == 3) mouse_x[joy] += 4;
-		mouse_x[joy] = (mouse_x[joy] & 0xfc) | cntx;
-
-			  if (cnty == 3 && ocnty == 0) mouse_y[joy] -= 4;
-		else if (cnty == 0 && ocnty == 3) mouse_y[joy] += 4;
-		mouse_y[joy] = (mouse_y[joy] & 0xfc) | cnty;
-
-		if (!left || !right || !top || !bot) {
-			mouse_frame_x[joy] = mouse_x[joy];
-			mouse_frame_y[joy] = mouse_y[joy];
-		}
-	}
-	function integrateEvent(ie) {
-		var p = ie.port;
-
-		switch (ie.id) {
-			case SAEC_Input_Event_Press: {
-				/*int old = joybutton[p] & (1 << ie.arg1);
-				if (ie.arg2)
-					joybutton[p] |= 1 << ie.arg1;
-				else
-					joybutton[p] &= ~(1 << ie.arg1);
-				if (ie.data == 0 && old != (joybutton[p] & (1 << ie.data)) && currprefs.cpu_cycle_exact) {
-					if (!input_record && !input_play && currprefs.input_contact_bounce) {
-						bouncy = 1; // emulate contact bounce, 1st button only, others have capacitors
-						bouncy_cycles = get_cycles () + CYCLE_UNIT * currprefs.input_contact_bounce;
+					var v = getvelocity(i, 0, pct);
+					//mxd += v;
+					mouse_x[i] += v;
+					if (mouse_x[i] < 0) {
+						mouse_x[i] += MOUSEXY_MAX;
+						mouse_frame_x[i] = mouse_x[i] - v;
 					}
-				}*/
-				if (ie.arg2)
-					joybutton[p] |= ie.arg1;
-				else
-					joybutton[p] &= ~ie.arg1;
+					if (mouse_x[i] >= MOUSEXY_MAX) {
+						mouse_x[i] -= MOUSEXY_MAX;
+						mouse_frame_x[i] = mouse_x[i] - v;
+					}
 
-				break;
+					v = getvelocity(i, 1, pct);
+					//myd += v;
+					mouse_y[i] += v;
+					if (mouse_y[i] < 0) {
+						mouse_y[i] += MOUSEXY_MAX;
+						mouse_frame_y[i] = mouse_y[i] - v;
+					}
+					if (mouse_y[i] >= MOUSEXY_MAX) {
+						mouse_y[i] -= MOUSEXY_MAX;
+						mouse_frame_y[i] = mouse_y[i] - v;
+					}
+
+					/*v = getvelocity(i, 2, pct);
+					if (v > 0)
+						record_key (0x7a << 1);
+					else if (v < 0)
+						record_key (0x7b << 1);*/
+					if (!mouse_deltanoreset[i][2])
+						mouse_delta[i][2] = 0;
+
+					if (mouse_frame_x[i] - mouse_x[i] > max) {
+						mouse_x[i] = mouse_frame_x[i] - max;
+						mouse_x[i] &= MOUSEXY_MAX - 1;
+					}
+					if (mouse_frame_x[i] - mouse_x[i] < -max) {
+						mouse_x[i] = mouse_frame_x[i] + max;
+						mouse_x[i] &= MOUSEXY_MAX - 1;
+					}
+					if (mouse_frame_y[i] - mouse_y[i] > max)
+						mouse_y[i] = mouse_frame_y[i] - max;
+					if (mouse_frame_y[i] - mouse_y[i] < -max)
+						mouse_y[i] = mouse_frame_y[i] + max;
+				}
+
+				if (!vsync) {
+					mouse_frame_x[i] = mouse_x[i];
+					mouse_frame_y[i] = mouse_y[i];
+				}
 			}
-			case SAEC_Input_Event_MouseMove: {
-				/*var max = 0;//100;
-				var delta;
-				//int deadzone = currprefs.input_joymouse_deadzone * max / 100;
-				var deadzone = ~~(33 * max / 100);
-				var unit = ie.data & 0x7f;
 
-				if (max) {
-					if (state <= deadzone && state >= -deadzone) {
-						state = 0;
-						mouse_deltanoreset[p][unit] = 0;
-					} else if (state < 0) {
-						state += deadzone;
-						mouse_deltanoreset[p][unit] = 1;
+			/*if (lightpen_delta[0]) {
+				lightpen_x += lightpen_delta[0];
+				if (!lightpen_deltanoreset[0])
+					lightpen_delta[0] = 0;
+			}
+			if (lightpen_delta[1]) {
+				lightpen_y += lightpen_delta[1];
+				if (!lightpen_deltanoreset[1])
+					lightpen_delta[1] = 0;
+			}*/
+		}
+
+		function readinput() {
+			var vpos = SAER.playfield.get_vpos();
+			var maxvpos = SAER_Playfield_current_maxvpos();
+			var totalvpos = input_frame * maxvpos + vpos;
+			var diff = totalvpos - input_vpos;
+			//SAEF_log("Input.readinput() %d/%d : %d -> %d", vpos, maxvpos, diff, (diff * 1000 / maxvpos) >>> 0);
+			if (diff > 0) {
+				if (diff < 10)
+					mouseupdate(0, false);
+
+				else
+					mouseupdate((diff * 1000 / maxvpos) >>> 0, false);
+			}
+			input_vpos = totalvpos;
+		}
+
+		/*---------------------------------*/
+		function joymousecounter(joy) {
+			var left = (joydir[joy] & SAEC_Input_Direction_Left) ? 0 : 1;
+			var right = (joydir[joy] & SAEC_Input_Direction_Right) ? 0 : 1;
+			var top = (joydir[joy] & SAEC_Input_Direction_Up) ? 0 : 1;
+			var bot = (joydir[joy] & SAEC_Input_Direction_Down) ? 0 : 1;
+
+			var b0 = (bot ^ right) ? 1 : 0;
+			var b1 = (right ^ 1) ? 2 : 0;
+			var b8 = (top ^ left) ? 1 : 0;
+			var b9 = (left ^ 1) ? 2 : 0;
+
+			var cntx = b0 | b1;
+			var cnty = b8 | b9;
+			var ocntx = mouse_x[joy] & 3;
+			var ocnty = mouse_y[joy] & 3;
+
+			if (cntx == 3 && ocntx == 0) mouse_x[joy] -= 4;
+			else if (cntx == 0 && ocntx == 3) mouse_x[joy] += 4;
+			mouse_x[joy] = (mouse_x[joy] & 0xfc) | cntx;
+
+			if (cnty == 3 && ocnty == 0) mouse_y[joy] -= 4;
+			else if (cnty == 0 && ocnty == 3) mouse_y[joy] += 4;
+			mouse_y[joy] = (mouse_y[joy] & 0xfc) | cnty;
+
+			if (!left || !right || !top || !bot) {
+				mouse_frame_x[joy] = mouse_x[joy];
+				mouse_frame_y[joy] = mouse_y[joy];
+			}
+		}
+		function integrateEvent(ie) {
+			var p = ie.port;
+
+			switch (ie.id) {
+				case SAEC_Input_Event_Press: {
+					/*int old = joybutton[p] & (1 << ie.arg1);
+					if (ie.arg2)
+						joybutton[p] |= 1 << ie.arg1;
+					else
+						joybutton[p] &= ~(1 << ie.arg1);
+					if (ie.data == 0 && old != (joybutton[p] & (1 << ie.data)) && currprefs.cpu_cycle_exact) {
+						if (!input_record && !input_play && currprefs.input_contact_bounce) {
+							bouncy = 1; // emulate contact bounce, 1st button only, others have capacitors
+							bouncy_cycles = get_cycles () + CYCLE_UNIT * currprefs.input_contact_bounce;
+						}
+					}*/
+					if (ie.arg2)
+						joybutton[p] |= ie.arg1;
+
+					else
+						joybutton[p] &= ~ie.arg1;
+
+					break;
+				}
+				case SAEC_Input_Event_MouseMove: {
+					/*var max = 0;//100;
+					var delta;
+					//int deadzone = currprefs.input_joymouse_deadzone * max / 100;
+					var deadzone = ~~(33 * max / 100);
+					var unit = ie.data & 0x7f;
+    
+					if (max) {
+						if (state <= deadzone && state >= -deadzone) {
+							state = 0;
+							mouse_deltanoreset[p][unit] = 0;
+						} else if (state < 0) {
+							state += deadzone;
+							mouse_deltanoreset[p][unit] = 1;
+						} else {
+							state -= deadzone;
+							mouse_deltanoreset[p][unit] = 1;
+						}
+						max -= deadzone;
+						//delta = state * currprefs.input_joymouse_multiplier / max;
+						delta = ~~(state * 100 / max);
 					} else {
-						state -= deadzone;
-						mouse_deltanoreset[p][unit] = 1;
+						delta = state;
+						mouse_deltanoreset[p][unit] = 0;
 					}
-					max -= deadzone;
-					//delta = state * currprefs.input_joymouse_multiplier / max;
-					delta = ~~(state * 100 / max);
-				} else {
-					delta = state;
-					mouse_deltanoreset[p][unit] = 0;
+					if (ie.data & IE_CDTV) {
+						delta = 0;
+						if (state > 0)
+							delta = JOYMOUSE_CDTV;
+						else if (state < 0)
+							delta = -JOYMOUSE_CDTV;
+					}
+    
+					if (ie.data & IE_INVERT) delta = -delta;
+    
+					if (max)
+						mouse_delta[p][unit] = delta;
+					else
+						mouse_delta[p][unit] += delta;*/
+					mouse_deltanoreset[p][0] = 0;
+					mouse_deltanoreset[p][1] = 0;
+					mouse_delta[p][0] += ie.arg1;
+					mouse_delta[p][1] += ie.arg2;
+
+					break;
 				}
-				if (ie.data & IE_CDTV) {
-					delta = 0;
-					if (state > 0)
-						delta = JOYMOUSE_CDTV;
-					else if (state < 0)
-						delta = -JOYMOUSE_CDTV;
-				}
+				case SAEC_Input_Event_JoystickMove: {
+					var left = oleft[p], right = oright[p], top = otop[p], bot = obot[p];
 
-				if (ie.data & IE_INVERT) delta = -delta;
-
-				if (max)
-					mouse_delta[p][unit] = delta;
-				else
-					mouse_delta[p][unit] += delta;*/
-
-				mouse_deltanoreset[p][0] = 0;
-				mouse_deltanoreset[p][1] = 0;
-				mouse_delta[p][0] += ie.arg1;
-				mouse_delta[p][1] += ie.arg2;
-
-				break;
-			}
-			case SAEC_Input_Event_JoystickMove: {
-				var left = oleft[p], right = oright[p], top = otop[p], bot = obot[p];
-
-				//digital
-				//if (1) {
+					//digital
+					//if (1) {
 					if (ie.arg1 & SAEC_Input_Direction_Left) {
 						left = oleft[p] = ie.arg2 ? 1 : 0;
 						if (horizclear[p] && left) {
@@ -1654,360 +1659,371 @@ function SAEO_Input() {
 							top = otop[p] = 0;
 						}
 					}
-				/*} else {
+					/*} else {
+    
+					}*/
+					mouse_deltanoreset[p][0] = 1;
+					mouse_deltanoreset[p][1] = 1;
+					joydir[p] = 0;
+					if (left) joydir[p] |= SAEC_Input_Direction_Left;
+					if (right) joydir[p] |= SAEC_Input_Direction_Right;
+					if (top) joydir[p] |= SAEC_Input_Direction_Up;
+					if (bot) joydir[p] |= SAEC_Input_Direction_Down;
+					if (p == 0 || p == 1)
+						joymousecounter(p);
 
-				}*/
-				mouse_deltanoreset[p][0] = 1;
-				mouse_deltanoreset[p][1] = 1;
-				joydir[p] = 0;
-				if (left) joydir[p] |= SAEC_Input_Direction_Left;
-				if (right) joydir[p] |= SAEC_Input_Direction_Right;
-				if (top) joydir[p] |= SAEC_Input_Direction_Up;
-				if (bot) joydir[p] |= SAEC_Input_Direction_Down;
-				if (p == 0 || p == 1)
-					joymousecounter(p);
-
-				break;
-			}
-		}
-	}
-
-	this.hsync = function() { //inputdevice_hsync()
-		cap_check();
-
-		/*#ifdef CATWEASEL
-		catweasel_hsync();
-		#endif*/
-
-		for (var i = 0; i < INPUT_QUEUE_SIZE; i++) {
-			//struct input_queue_struct *iq = &input_queue[i];
-			var iq = input_queue[i];
-			if (iq.linecnt > 0) {
-				iq.linecnt--;
-				if (iq.linecnt == 0) {
-					/*iq.state = iq.state ? 0 : iq.storedstate;
-					if (iq.custom) handle_custom_event(iq.custom);
-					if (iq.evt) handle_input_event(iq.evt, iq.state, iq.max, 0, false, true);*/
-					integrateEvent(iq);
-					iq.linecnt = iq.nextlinecnt;
+					break;
 				}
 			}
 		}
 
-		/*if (bouncy && SAEV_Events_currcycle > bouncy_cycles)
-			bouncy = 0;
-
-		if (input_record && input_record != INPREC_RECORD_PLAYING) {
-			if (vpos == 0)
-				inputdevice_read ();
-			inputdelay = 0;
-		}
-		if (input_play) {
-			inprec_playdiskchange ();
-			int nr, state, max, autofire;
-			while (inprec_playevent (&nr, &state, &max, &autofire))
-				handle_input_event (nr, state, max, autofire, false, true);
-			if (vpos == 0)
-				handle_msgpump ();
-		}
-		if (!input_record && !input_play) {
-			static int cnt;
-			if ((++cnt & 63) == 63 ) {
-				inputdevice_read ();
-			} else if (inputdelay > 0) {
-				inputdelay--;
-				if (inputdelay == 0)
-					inputdevice_read ();
-			}
-		}*/
-	}
-
-	this.vsync = function() { //inputdevice_vsync()
-		input_frame++;
-
-		mouseupdate(0, true);
-
-		/*struct delayed_event *de = delayed_events;
-		while (de) {
-			if (de->delay > 0)
-				de->delay--;
-			if (de->delay == 0) {
-				de->delay = -1;
-				if (de->event_string) {
-					TCHAR *s = de->event_string;
-					de->event_string = NULL;
-					handle_custom_event (s);
-					xfree (s);
-				}
-			}
-			de = de->next;
-		}
-
-		if (!input_record) {
-			inputdevice_read ();
-			if (!input_play)
-				inputdelay = uaerand () % (maxvpos <= 1 ? 1 : maxvpos - 1);
-		}
-
-		inputdevice_handle_inputcode ();
-		if (mouseedge_alive > 0)
-			mouseedge_alive--;
-
-		#ifdef ARCADIA
-		if (arcadia_bios) arcadia_vsync ();
-		#endif
-
-		if (mouseedge())
-			mouseedge_alive = 10;
-
-		if (mousehack_alive_cnt > 0) {
-			mousehack_alive_cnt--;
-			if (mousehack_alive_cnt == 0)
-				setmouseactive (-1);
-		} else if (mousehack_alive_cnt < 0) {
-			mousehack_alive_cnt++;
-			if (mousehack_alive_cnt == 0) {
-				mousehack_alive_cnt = 100;
-				setmouseactive (0);
-				setmouseactive (1);
-			}
-		}
-		inputdevice_checkconfig();
-		*/
-	}
-
-	/*---------------------------------*/
-
-	this.registerEvent = function(port, id, arg1, arg2) {
-		if (input_queue === null || SAER.paused)
-			return;
-		for (var idx = 0; idx < INPUT_QUEUE_SIZE; idx++) {
-			if (input_queue[idx].linecnt < 0)
-				break;
-		}
-		if (idx == INPUT_QUEUE_SIZE) {
-			SAEF_warn("Input.registerEvent() queue overflow");
-			return;
-		}
-		var iq = input_queue[idx];
-		iq.port = port;
-		iq.id = id;
-		iq.arg1 = arg1;
-		iq.arg2 = arg2;
-		iq.linecnt = 1;
-		iq.nextlinecnt = -1;
-
-		/*const linecnt = 1;
-		if (linecnt < 0) {
-			var maxvpos = SAER.playfield.get_maxvpos();
-			iq.linecnt = maxvpos + (maxvpos >> 1);
-		} else
-			iq.linecnt = linecnt;
-
-		const autofire = 0;
-		iq.nextlinecnt = autofire > 0 ? linecnt : -1;*/
-	};
-
-	this.keyPress = function(e, down) {
-		this.keyboard.keyPress(e, down);
-	};
-
-	/*---------------------------------*/
-
-	this.setup = function() {
-		var err;
-
-		input_queue = new Array(INPUT_QUEUE_SIZE);
-		for (var i = 0; i < INPUT_QUEUE_SIZE; i++)
-			input_queue[i] = new input_queue_struct();
-
-		this.keyboard.setup();
-		if ((err = this.joystick[0].setup()) == SAEE_None) {
-			if ((err = this.joystick[1].setup()) == SAEE_None) {
-				mouse_port[0] = SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Mouse;
-				mouse_port[1] = false; /* disabled for now */
-				analog_port[0][0] = analog_port[0][1] = false; /* disabled for now */
-				analog_port[1][0] = analog_port[1][1] = false; /* disabled for now */
-				digital_port[0][0] = digital_port[0][1] = SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Joy || SAEV_config.ports[0].type == SAEC_Config_Ports_Type_JoyEmu;
-				digital_port[1][0] = digital_port[1][1] = SAEV_config.ports[1].type == SAEC_Config_Ports_Type_Joy || SAEV_config.ports[1].type == SAEC_Config_Ports_Type_JoyEmu;
-				return SAEE_None;
-			}
-			this.joystick[0].cleanup();
-		}
-		this.keyboard.cleanup();
-		return err;
-	};
-
-	this.cleanup = function() {
-		this.joystick[1].cleanup();
-		this.joystick[0].cleanup();
-		this.keyboard.cleanup();
-
-		input_queue = null;
-	};
-
-	this.reset = function() {
-		this.mouse.reset();
-		this.joystick[0].reset();
-		this.joystick[1].reset();
-		this.keyboard.reset();
-
-		for (var i = 0; i < 4; i++) {
-			mouse_delta[i][0] = mouse_deltanoreset[i][0] = 0;
-			//mouse_delta[i][1] = mouse_deltanoreset[i][1] = 0;
-			//mouse_delta[i][2] = mouse_deltanoreset[i][2] = 0;
-			joybutton[i] = 0;
-			joydir[i] = 0;
-			//joydirpot[i][j] = 128 / (312 * 100 / currprefs.input_analog_joystick_mult) + (128 * currprefs.input_analog_joystick_mult / 100) + currprefs.input_analog_joystick_offset;
-			//joydirpot[i][0] = ~~(128 / ~~(312 * 100 / 15)) + ~~(128 * 15 / 100) + -1;
-			//joydirpot[i][1] = ~~(128 / ~~(312 * 100 / 15)) + ~~(128 * 15 / 100) + -1;
-			joydirpot[i][0] = joydirpot[i][1] = 0;
-			oleft[i] = oright[i] = otop[i] = obot[i] = 0;
-			horizclear[i] = vertclear[i] = true;
-			//relativecount[i][0] = relativecount[i][1] = 0;
-		}
-		potgo_value = 0;
-		for (var i = 0; i < 2; i++) {
-			pot_dat[i][0] = pot_dat[i][1] = 0;
-			//cd32_shifter[i] = 8;
-		}
-		input_vpos = input_frame = 0;
-
-		for (var i = 0; i < INPUT_QUEUE_SIZE; i++)
-			input_queue[i].linecnt = input_queue[i].nextlinecnt = -1;
-	};
-
-	/*---------------------------------*/
-
-	this.POTGO = function(v) {
-		//SAEF_log("Input.POTGO() $%04x", v);
-
-		SAER.dongle.potgo(v);
-
-		potgo_value = potgo_value & 0x5500; /* keep state of data bits */
-		potgo_value |= v & 0xaa00; /* get new direction bits */
-
-		var i, j;
-		for (i = 0; i < 8; i += 2) {
-			var dir = 0x0200 << i; //u16
-			if (v & dir) {
-				var data = 0x0100 << i; //u16
-				potgo_value &= ~data;
-				potgo_value |= v & data;
-			}
-		}
-		/*for (i = 0; i < 2; i++) {
-			if (cd32_pad_enabled[i]) {
-				var p5dir = 0x0200 << (i * 4); // output enable P5
-				var p5dat = 0x0100 << (i * 4); // data P5
-				if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir)))
-					cd32_shifter[i] = 8;
-			}
-		}*/
-		if (v & 1) {
-			for (i = 0; i < 2; i++) {
-				for (j = 0; j < 2; j++) {
-					pot_dat_act[i][j] = 1;
-					pot_dat[i][j] = 0;
-				}
-			}
-		}
-	};
-
-	this.POTGOR = function() {
-		var v = 0;
-		//var v = handle_joystick_potgor(potgo_value) & 0x5500; //OPT inline ok
-		{
-			v = potgo_value;
-
+		this.hsync = function () {
 			cap_check();
 
-			for (var i = 0; i < 2; i++) {
-				var p9dir = 0x0800 << ((i << 2)); /* output enable P9 */
-				var p9dat = 0x0400 << ((i << 2)); /* data P9 */
-				var p5dir = 0x0200 << ((i << 2)); /* output enable P5 */
-				var p5dat = 0x0100 << ((i << 2)); /* data P5 */
-
-				/*if (cd32_pad_enabled[i] && cd32padmode(p5dir, p5dat)) {
-					// p5 is floating in input-mode
-					v &= ~p5dat;
-					v |= potgo_value & p5dat;
-					if (!(potgo_value & p9dir))
-						v |= p9dat;
-					// (P5 output and 1) or floating -> shift register is kept reset (Blue button)
-					if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir)))
-						cd32_shifter[i] = 8;
-					// shift at 1 == return one, >1 = return button states
-					if (cd32_shifter[i] == 0)
-						v &= ~p9dat; // shift at zero == return zero
-					if (cd32_shifter[i] >= 2 && (joybutton[i] & ((1 << JOYBUTTON_CD32_PLAY) << (cd32_shifter[i] - 2))))
-						v &= ~p9dat;
-				} else*/
-				{
-					v &= ~p5dat;
-					if (pot_cap[i][0] > 100)
-						v |= p5dat;
-
-					//if (!cd32_pad_enabled[i] || !cd32padmode(p5dir, p5dat))
-					//if (!cd32padmode(p5dir, p5dat))
-					if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir))) {
-						v &= ~p9dat;
-						if (pot_cap[i][1] > 100)
-							v |= p9dat;
+			/*#ifdef CATWEASEL
+			catweasel_hsync();
+			#endif*/
+			for (var i = 0; i < INPUT_QUEUE_SIZE; i++) {
+				//struct input_queue_struct *iq = &input_queue[i];
+				var iq = input_queue[i];
+				if (iq.linecnt > 0) {
+					iq.linecnt--;
+					if (iq.linecnt == 0) {
+						/*iq.state = iq.state ? 0 : iq.storedstate;
+						if (iq.custom) handle_custom_event(iq.custom);
+						if (iq.evt) handle_input_event(iq.evt, iq.state, iq.max, 0, false, true);*/
+						integrateEvent(iq);
+						iq.linecnt = iq.nextlinecnt;
 					}
 				}
 			}
-			v &= 0x5500;
-		}
 
-		v = SAER.dongle.potgor(v);
-		//SAEF_log("Input.POTGOR() $%04x", v);
-		return v;
-	};
+			/*if (bouncy && SAEV_Events_currcycle > bouncy_cycles)
+				bouncy = 0;
+    
+			if (input_record && input_record != INPREC_RECORD_PLAYING) {
+				if (vpos == 0)
+					inputdevice_read ();
+				inputdelay = 0;
+			}
+			if (input_play) {
+				inprec_playdiskchange ();
+				int nr, state, max, autofire;
+				while (inprec_playevent (&nr, &state, &max, &autofire))
+					handle_input_event (nr, state, max, autofire, false, true);
+				if (vpos == 0)
+					handle_msgpump ();
+			}
+			if (!input_record && !input_play) {
+				static int cnt;
+				if ((++cnt & 63) == 63 ) {
+					inputdevice_read ();
+				} else if (inputdelay > 0) {
+					inputdelay--;
+					if (inputdelay == 0)
+						inputdevice_read ();
+				}
+			}*/
+		};
 
-	this.POT0DAT = function() {
-		var v = ((pot_dat[0][1] & 0xff) << 8) | (pot_dat[0][0] & 0xff);
-		//SAEF_log("Input.POT0dDAT() %04x", v);
-		return v;
-	};
+		this.vsync = function () {
+			input_frame++;
 
-	this.POT1DAT = function() {
-		var v = ((pot_dat[1][1] & 0xff) << 8) | (pot_dat[1][0] & 0xff);
-		//SAEF_log("Input.POT1DAT() %04x", v);
-		return v;
-	};
+			mouseupdate(0, true);
 
-	this.JOY0DAT = function() {
-		readinput();
-		var v = ((mouse_y[0] & 0xff) << 8) | (mouse_x[0] & 0xff);
-		//SAEF_log("Input.JOY0DAT() %04x", v);
-		v = SAER.dongle.joydat(0, v);
-		return v;
-	};
+			/*struct delayed_event *de = delayed_events;
+			while (de) {
+				if (de->delay > 0)
+					de->delay--;
+				if (de->delay == 0) {
+					de->delay = -1;
+					if (de->event_string) {
+						TCHAR *s = de->event_string;
+						de->event_string = NULL;
+						handle_custom_event (s);
+						xfree (s);
+					}
+				}
+				de = de->next;
+			}
+    
+			if (!input_record) {
+				inputdevice_read ();
+				if (!input_play)
+					inputdelay = uaerand () % (maxvpos <= 1 ? 1 : maxvpos - 1);
+			}
+    
+			inputdevice_handle_inputcode ();
+			if (mouseedge_alive > 0)
+				mouseedge_alive--;
+    
+			#ifdef ARCADIA
+			if (arcadia_bios) arcadia_vsync ();
+			#endif
+    
+			if (mouseedge())
+				mouseedge_alive = 10;
+    
+			if (mousehack_alive_cnt > 0) {
+				mousehack_alive_cnt--;
+				if (mousehack_alive_cnt == 0)
+					setmouseactive (-1);
+			} else if (mousehack_alive_cnt < 0) {
+				mousehack_alive_cnt++;
+				if (mousehack_alive_cnt == 0) {
+					mousehack_alive_cnt = 100;
+					setmouseactive (0);
+					setmouseactive (1);
+				}
+			}
+			inputdevice_checkconfig();
+			*/
+		};
 
-	this.JOY1DAT = function() {
-		readinput();
-		var v = ((mouse_y[1] & 0xff) << 8) | (mouse_x[1] & 0xff);
-		//SAEF_log("Input.JOY1DAT() %04x", v);
-		v = SAER.dongle.joydat(1, v);
-		return v;
-	};
+		/*---------------------------------*/
+		this.registerEvent = function (port, id, arg1, arg2) {
+			if (input_queue === null || SAER.paused)
+				return;
+			for (var idx = 0; idx < INPUT_QUEUE_SIZE; idx++) {
+				if (input_queue[idx].linecnt < 0)
+					break;
+			}
+			if (idx == INPUT_QUEUE_SIZE) {
+				SAEF_warn("Input.registerEvent() queue overflow");
+				return;
+			}
+			var iq = input_queue[idx];
+			iq.port = port;
+			iq.id = id;
+			iq.arg1 = arg1;
+			iq.arg2 = arg2;
+			iq.linecnt = 1;
+			iq.nextlinecnt = -1;
 
-	this.JOYTEST = function(v) {
-		mouse_x[0] &= 3;
-		mouse_y[0] &= 3;
-		mouse_x[1] &= 3;
-		mouse_y[1] &= 3;
-		mouse_x[0] |= v & 0xFC;
-		mouse_x[1] |= v & 0xFC;
-		mouse_y[0] |= (v >> 8) & 0xFC;
-		mouse_y[1] |= (v >> 8) & 0xFC;
-		mouse_frame_x[0] = mouse_x[0];
-		mouse_frame_y[0] = mouse_y[0];
-		mouse_frame_x[1] = mouse_x[1];
-		mouse_frame_y[1] = mouse_y[1];
+			/*const linecnt = 1;
+			if (linecnt < 0) {
+				var maxvpos = SAER.playfield.get_maxvpos();
+				iq.linecnt = maxvpos + (maxvpos >> 1);
+			} else
+				iq.linecnt = linecnt;
+    
+			const autofire = 0;
+			iq.nextlinecnt = autofire > 0 ? linecnt : -1;*/
+		};
 
-		//SAER.dongle.joytest(v); /* empty */
-		//SAEF_log("Input.JOYTEST() %04x", v);
-	};
+		this.keyPress = function (e, down) {
+			this.keyboard.keyPress(e, down);
+		};
+
+		/*---------------------------------*/
+		this.setup = function () {
+			var err;
+
+			input_queue = new Array(INPUT_QUEUE_SIZE);
+			for (var i = 0; i < INPUT_QUEUE_SIZE; i++)
+				input_queue[i] = new input_queue_struct();
+
+			this.keyboard.setup();
+			if ((err = this.joystick[0].setup()) == SAEE_None) {
+				if ((err = this.joystick[1].setup()) == SAEE_None) {
+					mouse_port[0] = SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Mouse;
+					mouse_port[1] = false; /* disabled for now */
+					analog_port[0][0] = analog_port[0][1] = false; /* disabled for now */
+					analog_port[1][0] = analog_port[1][1] = false; /* disabled for now */
+					digital_port[0][0] = digital_port[0][1] = SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Joy || SAEV_config.ports[0].type == SAEC_Config_Ports_Type_JoyEmu;
+					digital_port[1][0] = digital_port[1][1] = SAEV_config.ports[1].type == SAEC_Config_Ports_Type_Joy || SAEV_config.ports[1].type == SAEC_Config_Ports_Type_JoyEmu;
+					return SAEE_None;
+				}
+				this.joystick[0].cleanup();
+			}
+			this.keyboard.cleanup();
+			return err;
+		};
+
+		this.cleanup = function () {
+			this.joystick[1].cleanup();
+			this.joystick[0].cleanup();
+			this.keyboard.cleanup();
+
+			input_queue = null;
+		};
+
+		this.reset = function () {
+			this.mouse.reset();
+			this.joystick[0].reset();
+			this.joystick[1].reset();
+			this.keyboard.reset();
+
+			for (var i = 0; i < 4; i++) {
+				mouse_delta[i][0] = mouse_deltanoreset[i][0] = 0;
+				//mouse_delta[i][1] = mouse_deltanoreset[i][1] = 0;
+				//mouse_delta[i][2] = mouse_deltanoreset[i][2] = 0;
+				joybutton[i] = 0;
+				joydir[i] = 0;
+				//joydirpot[i][j] = 128 / (312 * 100 / currprefs.input_analog_joystick_mult) + (128 * currprefs.input_analog_joystick_mult / 100) + currprefs.input_analog_joystick_offset;
+				//joydirpot[i][0] = ~~(128 / ~~(312 * 100 / 15)) + ~~(128 * 15 / 100) + -1;
+				//joydirpot[i][1] = ~~(128 / ~~(312 * 100 / 15)) + ~~(128 * 15 / 100) + -1;
+				joydirpot[i][0] = joydirpot[i][1] = 0;
+				oleft[i] = oright[i] = otop[i] = obot[i] = 0;
+				horizclear[i] = vertclear[i] = true;
+				//relativecount[i][0] = relativecount[i][1] = 0;
+			}
+			potgo_value = 0;
+			for (var i = 0; i < 2; i++) {
+				pot_dat[i][0] = pot_dat[i][1] = 0;
+				//cd32_shifter[i] = 8;
+			}
+			input_vpos = input_frame = 0;
+
+			for (var i = 0; i < INPUT_QUEUE_SIZE; i++)
+				input_queue[i].linecnt = input_queue[i].nextlinecnt = -1;
+		};
+
+		/*---------------------------------*/
+		this.POTGO = function (v) {
+			//SAEF_log("Input.POTGO() $%04x", v);
+			SAER.dongle.potgo(v);
+
+			potgo_value = potgo_value & 0x5500; /* keep state of data bits */
+			potgo_value |= v & 0xaa00; /* get new direction bits */
+
+			var i, j;
+			for (i = 0; i < 8; i += 2) {
+				var dir = 0x0200 << i; //u16
+				if (v & dir) {
+					var data = 0x0100 << i; //u16
+					potgo_value &= ~data;
+					potgo_value |= v & data;
+				}
+			}
+			/*for (i = 0; i < 2; i++) {
+				if (cd32_pad_enabled[i]) {
+					var p5dir = 0x0200 << (i * 4); // output enable P5
+					var p5dat = 0x0100 << (i * 4); // data P5
+					if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir)))
+						cd32_shifter[i] = 8;
+				}
+			}*/
+			if (v & 1) {
+				for (i = 0; i < 2; i++) {
+					for (j = 0; j < 2; j++) {
+						pot_dat_act[i][j] = 1;
+						pot_dat[i][j] = 0;
+					}
+				}
+			}
+		};
+
+		this.POTGOR = function () {
+			var v = 0;
+			//var v = handle_joystick_potgor(potgo_value) & 0x5500; //OPT inline ok
+			{
+				v = potgo_value;
+
+				cap_check();
+
+				for (var i = 0; i < 2; i++) {
+					var p9dir = 0x0800 << ((i << 2)); /* output enable P9 */
+					var p9dat = 0x0400 << ((i << 2)); /* data P9 */
+					var p5dir = 0x0200 << ((i << 2)); /* output enable P5 */
+					var p5dat = 0x0100 << ((i << 2)); /* data P5 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					/*if (cd32_pad_enabled[i] && cd32padmode(p5dir, p5dat)) {
+						// p5 is floating in input-mode
+						v &= ~p5dat;
+						v |= potgo_value & p5dat;
+						if (!(potgo_value & p9dir))
+							v |= p9dat;
+						// (P5 output and 1) or floating -> shift register is kept reset (Blue button)
+						if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir)))
+							cd32_shifter[i] = 8;
+						// shift at 1 == return one, >1 = return button states
+						if (cd32_shifter[i] == 0)
+							v &= ~p9dat; // shift at zero == return zero
+						if (cd32_shifter[i] >= 2 && (joybutton[i] & ((1 << JOYBUTTON_CD32_PLAY) << (cd32_shifter[i] - 2))))
+							v &= ~p9dat;
+					} else*/
+					{
+						v &= ~p5dat;
+						if (pot_cap[i][0] > 100)
+							v |= p5dat;
+
+						//if (!cd32_pad_enabled[i] || !cd32padmode(p5dir, p5dat))
+						//if (!cd32padmode(p5dir, p5dat))
+						if (!(potgo_value & p5dir) || ((potgo_value & p5dat) && (potgo_value & p5dir))) {
+							v &= ~p9dat;
+							if (pot_cap[i][1] > 100)
+								v |= p9dat;
+						}
+					}
+				}
+				v &= 0x5500;
+			}
+
+			v = SAER.dongle.potgor(v);
+			//SAEF_log("Input.POTGOR() $%04x", v);
+			return v;
+		};
+
+		this.POT0DAT = function () {
+			var v = ((pot_dat[0][1] & 0xff) << 8) | (pot_dat[0][0] & 0xff);
+			//SAEF_log("Input.POT0dDAT() %04x", v);
+			return v;
+		};
+
+		this.POT1DAT = function () {
+			var v = ((pot_dat[1][1] & 0xff) << 8) | (pot_dat[1][0] & 0xff);
+			//SAEF_log("Input.POT1DAT() %04x", v);
+			return v;
+		};
+
+		this.JOY0DAT = function () {
+			readinput();
+			var v = ((mouse_y[0] & 0xff) << 8) | (mouse_x[0] & 0xff);
+			//SAEF_log("Input.JOY0DAT() %04x", v);
+			v = SAER.dongle.joydat(0, v);
+			return v;
+		};
+
+		this.JOY1DAT = function () {
+			readinput();
+			var v = ((mouse_y[1] & 0xff) << 8) | (mouse_x[1] & 0xff);
+			//SAEF_log("Input.JOY1DAT() %04x", v);
+			v = SAER.dongle.joydat(1, v);
+			return v;
+		};
+
+		this.JOYTEST = function (v) {
+			mouse_x[0] &= 3;
+			mouse_y[0] &= 3;
+			mouse_x[1] &= 3;
+			mouse_y[1] &= 3;
+			mouse_x[0] |= v & 0xFC;
+			mouse_x[1] |= v & 0xFC;
+			mouse_y[0] |= (v >> 8) & 0xFC;
+			mouse_y[1] |= (v >> 8) & 0xFC;
+			mouse_frame_x[0] = mouse_x[0];
+			mouse_frame_y[0] = mouse_y[0];
+			mouse_frame_x[1] = mouse_x[1];
+			mouse_frame_y[1] = mouse_y[1];
+
+			//SAER.dongle.joytest(v); /* empty */
+			//SAEF_log("Input.JOYTEST() %04x", v);
+		};
+	}
 }

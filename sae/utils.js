@@ -62,35 +62,39 @@ function SAEF_le16toh(v) {
 /*-----------------------------------------------------------------------*/
 /* moving average */
 
-function SAEO_MAvg(size) {
-	var values = new Array(size);
-	var size = size;
-	var usage = 0;
-	var offset = 0;
-	var average = 0;
+/*-----------------------------------------------------------------------*/
+/* moving average */
+export class SAEO_MAvg {
+	constructor(size) {
+		var values = new Array(size);
+		var size = size;
+		var usage = 0;
+		var offset = 0;
+		var average = 0;
 
-	this.clr = function () {
-		usage = 0;
-		offset = 0;
-		average = 0;
-	};
+		this.clr = function () {
+			usage = 0;
+			offset = 0;
+			average = 0;
+		};
 
-	this.get = function() {
-		return average / usage; /* return as float */
-	}
+		this.get = function () {
+			return average / usage; /* return as float */
+		};
 
-	this.set = function(newval) {
-		if (usage < size) {
-			values[usage++] = newval;
-			average += newval;
-		} else {
-			average -= values[offset];
-			values[offset] = newval;
-			average += newval;
-			if (++offset >= size)
-				offset -= size;
-		}
-		return average / usage; /* return as float */
+		this.set = function (newval) {
+			if (usage < size) {
+				values[usage++] = newval;
+				average += newval;
+			} else {
+				average -= values[offset];
+				values[offset] = newval;
+				average += newval;
+				if (++offset >= size)
+					offset -= size;
+			}
+			return average / usage; /* return as float */
+		};
 	}
 }
 

@@ -1,3 +1,5 @@
+import { SAEC_Memory_addrbank_flag_CHIPRAM, SAEC_Memory_addrbank_flag_CIA, SAEC_Memory_addrbank_flag_IO, SAEC_Memory_addrbank_flag_NONE, SAEC_Memory_addrbank_flag_RAM } from "./constants";
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -16,37 +18,7 @@
 |
 | Note: ported from WinUAE 3.2.x
 -------------------------------------------------------------------------*/
-/* global constants */
 
-//ORG ABFLAG_*
-const SAEC_Memory_addrbank_flag_UNK = 0;
-const SAEC_Memory_addrbank_flag_RAM = 1;
-const SAEC_Memory_addrbank_flag_ROM = 2;
-const SAEC_Memory_addrbank_flag_ROMIN = 4;
-const SAEC_Memory_addrbank_flag_IO = 8;
-const SAEC_Memory_addrbank_flag_NONE = 16;
-const SAEC_Memory_addrbank_flag_SAFE = 32;
-//const SAEC_Memory_addrbank_flag_INDIRECT = 64;
-const SAEC_Memory_addrbank_flag_NOALLOC = 128;
-//const SAEC_Memory_addrbank_flag_RTG = 256;
-const SAEC_Memory_addrbank_flag_THREADSAFE = 512;
-//const SAEC_Memory_addrbank_flag_DIRECTMAP = 1024;
-const SAEC_Memory_addrbank_flag_ALLOCINDIRECT = 2048;
-const SAEC_Memory_addrbank_flag_CHIPRAM = 4096;
-const SAEC_Memory_addrbank_flag_CIA = 8192;
-const SAEC_Memory_addrbank_flag_PPCIOSPACE = 16384;
-
-const SAEC_Memory_addrbank_READ = 1;
-const SAEC_Memory_addrbank_WRITE = 2;
-
-
-const SAEC_Memory_banktype_FAST32 = 0; //CE_MEMBANK_FAST32
-const SAEC_Memory_banktype_CHIP16 = 1; //CE_MEMBANK_CHIP16
-const SAEC_Memory_banktype_CHIP32 = 2; //CE_MEMBANK_CHIP32
-const SAEC_Memory_banktype_CIA  = 3;   //CE_MEMBANK_CIA
-const SAEC_Memory_banktype_FAST16 = 4; //CE_MEMBANK_FAST16
-
-/*---------------------------------*/
 /* global references */
 
 var SAER_Memory_banks = null;
@@ -103,39 +75,41 @@ function SAEO_Memory_addrbank_sub(bank,offset) {
 	this.maskval = 0;
 }
 //function SAEO_Memory_addrbank(get32,get16,get8,put32,put16,put8, xlate,check,baseaddr,label,name, getInst32,getInst16, flags,read,write,sub_banks,mask,startmask) {
-function SAEO_Memory_addrbank(get32,get16,get8,put32,put16,put8, xlate,check,baseaddr,label,name, getInst32,getInst16, flags,sub_banks,mask,startmask) {
-	if (typeof sub_banks == "undefined") sub_banks = null;
-	if (typeof mask == "undefined") mask = 0;
-	if (typeof startmask == "undefined") startmask = 0;
-	this.get32 = get32, this.get16 = get16, this.get8 = get8; //mem_get_func
-	this.put32 = put32, this.put16 = put16, this.put8 = put8; //mem_put_func
-	this.xlateaddr = xlate; //xlate_func
-	this.check = check; //check_func
-	this.baseaddr = baseaddr; //u8 *
-	this.label = label;
-	this.name = name;
-	this.getInst32 = getInst32, this.getInst16 = getInst16; //mem_get_func
-	this.flags = flags;
-	//this.jit_read_flag = read;
-	//this.jit_write_flag = write;
-	this.sub_banks = sub_banks; //struct addrbank_sub *
-	this.mask = mask; //u32
-	this.startmask = startmask;
-	this.start = 0;
-	this.allocated = 0;
+export class SAEO_Memory_addrbank {
+	constructor(get32, get16, get8, put32, put16, put8, xlate, check, baseaddr, label, name, getInst32, getInst16, flags, sub_banks, mask, startmask) {
+		if (typeof sub_banks == "undefined") sub_banks = null;
+		if (typeof mask == "undefined") mask = 0;
+		if (typeof startmask == "undefined") startmask = 0;
+		this.get32 = get32, this.get16 = get16, this.get8 = get8; //mem_get_func
+		this.put32 = put32, this.put16 = put16, this.put8 = put8; //mem_put_func
+		this.xlateaddr = xlate; //xlate_func
+		this.check = check; //check_func
+		this.baseaddr = baseaddr; //u8 *
+		this.label = label;
+		this.name = name;
+		this.getInst32 = getInst32, this.getInst16 = getInst16; //mem_get_func
+		this.flags = flags;
+		//this.jit_read_flag = read;
+		//this.jit_write_flag = write;
+		this.sub_banks = sub_banks; //struct addrbank_sub *
+		this.mask = mask; //u32
+		this.startmask = startmask;
+		this.start = 0;
+		this.allocated = 0;
+	}
 }
 
 /*---------------------------------*/
 /* global functions */
 
-function SAEF_Memory_defaultCheck(a, b) {
+export function SAEF_Memory_defaultCheck(a, b) {
 	return 0;
 }
 
 var SAEV_Memory_defaultXLate_cnt = 0;
 var SAEV_Memory_defaultXLate_recursive = 0;
 
-function SAEF_Memory_defaultXLate(addr) {
+export function SAEF_Memory_defaultXLate(addr) {
 	if (SAEV_Memory_defaultXLate_recursive) {
 		SAER.m68k.cpu_halt(SAEC_CPU_halt_OPCODE_FETCH_FROM_NON_EXISTING_ADDRESS);
 		return kickmem_xlate(2);
@@ -181,7 +155,7 @@ function SAEF_Memory_dummyGet32(addr) {
 	SAER.memory.dummylog(0, addr, 4, 0, 0);
 	return SAER.memory.dummyGet(addr, 4, false, SAEC_Memory_dummyGet_NONEXISTINGDATA);
 }
-function SAEF_Memory_dummyGetInst32(addr) {
+export function SAEF_Memory_dummyGetInst32(addr) {
 	SAER.memory.dummylog(0, addr, 4, 0, 1);
 	return SAER.memory.dummyGet(addr, 4, true, SAEC_Memory_dummyGet_NONEXISTINGDATA);
 }
@@ -189,7 +163,7 @@ function SAEF_Memory_dummyGet16(addr) {
 	SAER.memory.dummylog(0, addr, 2, 0, 0);
 	return SAER.memory.dummyGet(addr, 2, false, SAEC_Memory_dummyGet_NONEXISTINGDATA);
 }
-function SAEF_Memory_dummyGetInst16(addr) {
+export function SAEF_Memory_dummyGetInst16(addr) {
 	SAER.memory.dummylog(0, addr, 2, 0, 1);
 	return SAER.memory.dummyGet(addr, 2, true, SAEC_Memory_dummyGet_NONEXISTINGDATA);
 }
@@ -276,7 +250,7 @@ function SAEF_Memory_subBankXLate(addr) {
 
 /*---------------------------------*/
 
-function SAEO_Memory() {
+export function SAEO_Memory() {
 	const ADDRESS_SPACE_24BIT = false; /* limit address-bus to 24bit */
 	const MEMORY_BANKS = ADDRESS_SPACE_24BIT ? 256 : 65536;
 	const MEMORY_RANGE_MASK = ADDRESS_SPACE_24BIT ? 0x00FFFFFF : 0xFFFFFFFF;
