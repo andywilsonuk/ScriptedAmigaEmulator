@@ -64,6 +64,7 @@ function SAEO_Video() {
 		failIfMajorPerformanceCaveat: false
 	};
 
+
 	function Texture(width, height, pixbytes) {
 		this.width = width;
 		this.width_allocated = (width + 7) & ~7;
@@ -103,10 +104,10 @@ function SAEO_Video() {
 		this.bottom = 0;
 	}
 
-	var hAmigaWnd = null, hMainWnd = null; //, hHiddenWnd, hGUIWnd; //HWND
+	var hAmigaWnd = null;
+	var hMainWnd = null;
 	var amigawin_rect = new RECT();
-	//var mainwin_rect = new RECT();
-	//var amigawinclip_rect = new RECT();
+
 
 	/*-----------------------------------------------------------------------*/
 
@@ -214,7 +215,7 @@ function SAEO_Video() {
 	function CreateWindow(left, top, width, height) {
 		var hWnd = new HWND();
 
-		var el = document.getElementById(SAEV_config.video.id);
+		var el = SAEV_config.video.domElement || document.getElementById(SAEV_config.video.id);
 		if (el.nodeName == "CANVAS")
 			hWnd.canvas = el;
 		else
@@ -227,11 +228,9 @@ function SAEO_Video() {
 		if (SAEV_config.video.api == SAEC_Config_Video_API_WebGL) {
 			try {
 				glParams.antialias = SAEV_config.video.antialias;
-				//glParams.alpha = glParams.premultipliedAlpha = SAEV_config.video.colorMode >= 5;
 				glParams.alpha = SAEV_config.video.colorMode >= 5;
 
 				hWnd.ctx = hWnd.canvas.getContext("webgl", glParams) || hWnd.canvas.getContext("experimental-webgl", glParams);
-				//hWnd.texture = new Texture(width, height, SAEV_config.video.colorMode < 5 : 2 : 4);
 			} catch(e) {
 				throw SAEE_Video_RequiresWegGl;
 			}
@@ -239,8 +238,6 @@ function SAEO_Video() {
 		else if (SAEV_config.video.api == SAEC_Config_Video_API_Canvas) {
 			try {
 				hWnd.ctx = hWnd.canvas.getContext("2d");
-				//hWnd.surface = new Surface(width, height, 4);
-				//hWnd.surface.imageData = hWnd.ctx.createImageData(width, height);
 			} catch(e) {
 				throw SAEE_Video_RequiresCanvas;
 			}
@@ -254,8 +251,8 @@ function SAEO_Video() {
 			return false;
 		};
 
-		if (SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Mouse) {
-			if (SAEC_info.video.pointerLock && SAEV_config.video.cursor == SAEC_Config_Video_Cursor_Lock)
+		if (SAEV_config.ports[0].type === SAEC_Config_Ports_Type_Mouse) {
+			if (SAEC_info.video.pointerLock && SAEV_config.video.cursor === SAEC_Config_Video_Cursor_Lock)
 				hWnd.canvas.myRequestPointerLock = hWnd.canvas.webkitRequestPointerLock || hWnd.canvas.mozRequestPointerLock || hWnd.canvas.msRequestPointerLock || hWnd.canvas.requestPointerLock;
 			else
 				hWnd.canvas.myRequestPointerLock = null;
@@ -273,9 +270,9 @@ function SAEO_Video() {
 			} else
 				SAER.input.mouse.attach(hWnd.canvas, false);
 		}
-		if (SAEV_config.ports[0].type == SAEC_Config_Ports_Type_Joy && SAEV_config.ports[0].device != SAEC_Config_Ports_Device_None)
+		if (SAEV_config.ports[0].type === SAEC_Config_Ports_Type_Joy && SAEV_config.ports[0].device !== SAEC_Config_Ports_Device_None)
 			SAER.input.joystick[0].enable();
-		if (SAEV_config.ports[1].type == SAEC_Config_Ports_Type_Joy && SAEV_config.ports[1].device != SAEC_Config_Ports_Device_None)
+		if (SAEV_config.ports[1].type === SAEC_Config_Ports_Type_Joy && SAEV_config.ports[1].device !== SAEC_Config_Ports_Device_None)
 			SAER.input.joystick[1].enable();
 
 		if (SAEC_info.video.requestFullScreen) {
@@ -348,11 +345,24 @@ function SAEO_Video() {
 
 	function ShowWindow(hWnd, nCmdShow) {
 		if (nCmdShow == SW_SHOWNORMAL && !hWnd.shown) {
-			var el = document.getElementById(SAEV_config.video.id);
+			var el = SAEV_config.video.domElement || document.getElementById(SAEV_config.video.id);
 			if (el.nodeName == "DIV") {
 				hWnd.div = el;
-				hWnd.div.style.width = String(currentmode.native_width)+"px";
-				hWnd.div.style.height = String(currentmode.native_height)+"px";
+				if (SAEV_config.video.scale){
+					hWnd.div.style.overflow = "hidden";
+					hWnd.div.style.width = "100%";
+					hWnd.div.style.height = "100%";
+					hWnd.canvas.style.width = "100%";
+					hWnd.canvas.style.height = "100%";
+
+					if (SAEV_config.video.scale === SAEC_Config_Video_Scale_Resize){
+						hWnd.canvas.style.objectFit = "contain";
+					}
+
+				}else{
+					hWnd.div.style.width = String(currentmode.native_width)+"px";
+					hWnd.div.style.height = String(currentmode.native_height)+"px";
+				}
 				hWnd.div.appendChild(hWnd.canvas);
 			} else {
 				hWnd.div = null;
@@ -391,11 +401,6 @@ function SAEO_Video() {
 
 	const DM_FULLSCREEN = 1; //DM_DX_FULLSCREEN
 	const DM_FULLWINOW = 2; //DM_W_FULLSCREEN
-	//const DM_D3D_FULLSCREEN = 16;
-	//const DM_PICASSO96 = 32;
-	//const DM_DDRAW = 64;
-	//const DM_DC = 128;
-	//const DM_D3D = 256;
 	const DM_CANVAS = 512; //OWN
 	const DM_WEBGL = 1024; //OWN
 	const DM_SWSCALE = 2048; //1024
@@ -1319,7 +1324,6 @@ function SAEO_Video() {
 		//var ret = 0;
 		var err = 0;
 
-		remembered_vblank = -1;
 		if (wasfullwindow_a == 0)
 			wasfullwindow_a = SAEV_config.video.apmode[0].gfx_fullscreen == SAEC_Config_Video_AP_Fullscreen_FULLWINDOW ? 1 : -1;
 		if (wasfullwindow_p == 0)
@@ -1883,7 +1887,7 @@ function SAEO_Video() {
 		if (!SAEV_config.video.enabled)
 			return SAEE_None;
 
-		var id = document.getElementById(SAEV_config.video.id);
+		var id = SAEV_config.video.domElement || document.getElementById(SAEV_config.video.id);
 		if (id === null || (id.nodeName != "DIV" && id.nodeName != "CANVAS"))
 			return SAEE_Video_ElementNotFound;
 

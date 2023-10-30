@@ -268,7 +268,7 @@ function SAEO_AutoConf() {
 		var trap_slot = Math.floor(addr / RTAREA_TRAP_STATUS_SIZE);
 		if (trap_offset == RTAREA_TRAP_STATUS_SECOND + 3) {
 			var v = value;
-			if (v != 0xff && v != 0xfe && v != 0x01 && v != 02)
+			if (v != 0xff && v != 0xfe && v != 0x01 && v != 2)
 				SAEF_log("autoconf.rtarea_put8() TRAP %d (%02x)", trap_slot, v);
 			if (v == 0xfe)
 				atomic_dec(hwtrap_waiting);

@@ -2415,7 +2415,7 @@ function SAEO_CPU() {
 		this.width = 0;
 		this.reloc = true;
 	}
-	config_da = new config_da_def();
+	let config_da = new config_da_def();
 
 	function setPC_da(pc) {
 		regs_da.pc = pc;

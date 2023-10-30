@@ -41,6 +41,7 @@
 
 function SAEO_M68K() {
 	var reset_delay = false;
+	let me = this;
 	this.halted = 0;
 	this.stopped = false;
 
@@ -57,7 +58,7 @@ function SAEO_M68K() {
 		SAEV_spcflags = 0;
 		SAEF_setSpcFlags(SAEC_spcflag_CHECK);
 
-		this.halted = 0;
+		me.halted = 0;
 		haltloop_prevvpos = false;
 		SAER.gui.data.cpu_halted = 0;
 		SAER.gui.led(SAEC_GUI_LED_CPU, 0, -1);
@@ -342,7 +343,7 @@ function SAEO_M68K() {
 	/*-----------------------------------------------------------------------*/
 
 	function do_interrupt(nr) {
-		this.stopped = false;
+		me.stopped = false;
 		SAEF_clrSpcFlags (SAEC_spcflag_STOP);
 		SAEF_assert(nr < 8 && nr >= 0);
 

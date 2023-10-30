@@ -184,41 +184,13 @@ const SAEC_info = (function() {
 	info.browser.lang = navigator.language;
 
 	/* max memory */
-	if (0) {
-		var size = 1048576;
-		while (true) {
-			try {
-				var data = new Uint8Array(size);
-				delete data;
-				info.memory.maxSize = size;
-			} catch (e) {
-				break;
-			}
-			size *= 2;
-		}
-	} else
-		info.memory.maxSize = 1073741824; //1G
+	info.memory.maxSize = 1073741824; //1G
+
 
 	/* audio */
 	if (typeof window.webkitAudioContext != "undefined" || typeof window.AudioContext != "undefined" )
 		info.audio.webAudio = true;
-	/* disabled because audioContextDriver() does require user-initiation
-	var audioContext = null;
-	try {
-		var audioContextDriver = window.AudioContext || window.webkitAudioContext;
-		audioContext = new audioContextDriver();
-		var audioProcessor = audioContext.createScriptProcessor(1024, 2, 2);
 
-		info.audio.webAudio = true;
-
-		if (audioContext.close) audioContext.close().then(function() {});
-		audioContext = null;
-	} catch (e) {
-		if (audioContext) {
-			if (audioContext.close) audioContext.close().then(function() {});
-			audioContext = null;
-		}
-	}*/
 
 	/* video */
 	var canvas = document.createElement("canvas");
@@ -283,6 +255,7 @@ function SAEF_now() {
 	return Math.floor(performance.now() * 1000); /* micro-seconds since page-load */
 }
 function SAEF_sleep(ms) {
+	console.error("SLEEP - AVOID")
 	var start = performance.now();
 	while ((performance.now() - start) < ms) {} /* pretty nasty */
 }

@@ -903,14 +903,14 @@ function SAEO_CIA() {
 				if (ciaacrb & 4)
 					pb7 = ciaacrb & 1;
 				tmp &= ~0x80;
-				tmp |= pb7 ? 0x80 : 00;
+				tmp |= pb7 ? 0x80 : 0;
 			}
 			if (ciaacra & 2) {
 				var pb6 = 0;
 				if (ciaacra & 4)
 					pb6 = ciaacra & 1;
 				tmp &= ~0x40;
-				tmp |= pb6 ? 0x40 : 00;
+				tmp |= pb6 ? 0x40 : 0;
 			}
 			return tmp;
 		case 2:
@@ -1021,14 +1021,14 @@ function SAEO_CIA() {
 				if (ciabcrb & 4)
 					pb7 = ciabcrb & 1;
 				tmp &= ~0x80;
-				tmp |= pb7 ? 0x80 : 00;
+				tmp |= pb7 ? 0x80 : 0;
 			}
 			if (ciabcra & 2) {
 				var pb6 = 0;
 				if (ciabcra & 4)
 					pb6 = ciabcra & 1;
 				tmp &= ~0x40;
-				tmp |= pb6 ? 0x40 : 00;
+				tmp |= pb6 ? 0x40 : 0;
 			}
 			return tmp;
 		case 2:

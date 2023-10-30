@@ -281,6 +281,10 @@ const SAEC_Config_Video_AP_Fullscreen_WINDOW = 0; //GFX_WINDOW
 const SAEC_Config_Video_AP_Fullscreen_FULLSCREEN = 1; //GFX_FULLSCREEN
 const SAEC_Config_Video_AP_Fullscreen_FULLWINDOW = 2; //GFX_FULLWINDOW
 
+const SAEC_Config_Video_Scale_None = 0;
+const SAEC_Config_Video_Scale_Resize = 1;
+const SAEC_Config_Video_Scale_Stretch = 2;
+
 function SAEO_Config_Video_WH() { //struct wh
 	this.x = 0;
 	this.y = 0;
@@ -1132,8 +1136,8 @@ function SAEO_Configuration() {
 			f.gfx_filter = 0;
 			f.gfx_filter_scanlineratio = (1 << 4) | 1;
 			for (var j = 0; j <= 2 * MAX_FILTERSHADERS; j++) {
-				f.gfx_filtershader[i][0] = 0;
-				f.gfx_filtermask[i][0] = 0;
+				//f.gfx_filtershader[i][0] = 0;
+				//f.gfx_filtermask[i][0] = 0;
 			}
 			f.gfx_filter_horiz_zoom_mult = 1.0;
 			f.gfx_filter_vert_zoom_mult = 1.0;
