@@ -1,9 +1,3 @@
-*.adf
-db/tools/index.htm
-db/index.htm
-db/games/index.htm
-db/demos_aga/index.htm
-db/demos/index.htm
-*.bin
-scriptedamigaemulator.js
-scriptedamigaemulator.js.map
+dist
+node_modules
+.parcel-cache
