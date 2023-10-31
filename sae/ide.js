@@ -17,6 +17,8 @@
 | Note: ported from WinUAE 3.2.x
 -------------------------------------------------------------------------*/
 
+import { SAEF_memset } from "./utils";
+
 function SAEO_IDE_threadState() { //ide_thread_state
 	this.idetable = null; //**
 	this.idetotal = 0;

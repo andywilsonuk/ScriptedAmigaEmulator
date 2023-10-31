@@ -1,5 +1,6 @@
-import { SAEC_Memory_addrbank_flag_IO, SAEC_Memory_addrbank_flag_RAM } from "./constants";
-import { SAEF_Memory_defaultCheck, SAEF_Memory_defaultXLate, SAEF_Memory_dummyGetInst16, SAEF_Memory_dummyGetInst32, SAEO_Memory_addrbank } from "./memory";
+import { SAEC_Memory_addrbank_flag_IO, SAEC_Memory_addrbank_flag_RAM, SAEC_Memory_addrbank_flag_SAFE } from "./constants";
+import { SAEF_Memory_defaultCheck, SAEF_Memory_defaultXLate, SAEF_Memory_dummyGetInst16, SAEF_Memory_dummyGetInst32, SAEF_Memory_subBankCheck, SAEF_Memory_subBankGet16, SAEF_Memory_subBankGet32, SAEF_Memory_subBankGet8, SAEF_Memory_subBankGetInst16, SAEF_Memory_subBankGetInst32, SAEF_Memory_subBankPut16, SAEF_Memory_subBankPut32, SAEF_Memory_subBankPut8, SAEF_Memory_subBankXLate, SAEO_Memory_addrbank, SAEO_Memory_addrbank_sub, SAEV_Memory_dummyBank } from "./memory";
+import { SAEF_memset } from "./utils";
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator

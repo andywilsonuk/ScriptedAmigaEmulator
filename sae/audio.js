@@ -1,5 +1,5 @@
 import { SAEC_Playfield_CLOCK_PAL, SAEC_Playfield_CLOCK_NTSC, SAEC_Events_CYCLE_MAX, SAEC_Events_CYCLE_UNIT } from './constants';
-import { SAEO_MAvg } from './utils';
+import { SAEF_memset, SAEO_MAvg } from './utils';
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
@@ -31,7 +31,9 @@ var SAER_Audio_deactivate = null;
 /*---------------------------------*/
 
 export class SAEO_Audio {
-	constructor() {
+	constructor(logger, config) {
+		this.logger = logger;
+		this.config = config;
 		const PAULA_FREQ_PAL = SAEC_Playfield_CLOCK_PAL / 123;
 		const PAULA_FREQ_NTSC = SAEC_Playfield_CLOCK_NTSC / 124;
 
@@ -74,7 +76,7 @@ export class SAEO_Audio {
 			if (have_sound) {
 				scaled_sample_evtime_orig = clk * SAEC_Events_CYCLE_UNIT * SOUND_SYNC_MULTIPLIER / used_freq;
 				scaled_sample_evtime = scaled_sample_evtime_orig;
-				SAEF_log("audio.update_sound() freq %f Hz, scaled sample eventtime %f cycles", used_freq, scaled_sample_evtime * SAEC_Events_CYCLE_UNIT_INV);
+				this.logger.logDebug("audio.update_sound() freq %f Hz, scaled sample eventtime %f cycles", used_freq, scaled_sample_evtime * SAEC_Events_CYCLE_UNIT_INV);
 			}
 		};
 
@@ -109,7 +111,7 @@ export class SAEO_Audio {
 				var avgskipmode = avg / (10000.0 / granulaty);
     
 				if ((tfprev % 10) == 0)
-					SAEF_log("%+05d S=%.1f AVG=%.1f (IMM=%.1f + AVG=%.1f = %.1f)", sndbuf, sync, avg, skipmode, avgskipmode, skipmode + avgskipmode);
+					this.logger.logDebug("%+05d S=%.1f AVG=%.1f (IMM=%.1f + AVG=%.1f = %.1f)", sndbuf, sync, avg, skipmode, avgskipmode, skipmode + avgskipmode);
     
 				SAER.gui.data.sndbuf = sndbuf;
     
@@ -135,30 +137,30 @@ export class SAEO_Audio {
 		function cachewrite(buffer, frames) {
 			var diff = cachediff(cache.writeoffset, cache.readoffset);
 			if (diff > cache.frames >> 2) {
-				SAEF_warn("audio.cachewrite() full %d", diff + frames);
+				this.logger.logWarn("audio.cachewrite() full %d", diff + frames);
 				return false;
 			}
 
 			if (cache.writeoffset + frames > cache.frames) {
 				var partsize = cache.frames - cache.writeoffset;
 				if (partsize) {
-					//SAEF_log("audio.cachewrite() write0 %d %d",  cache.writeoffset, partsize);
-					for (var j = 0; j < SAEV_config.audio.channels; j++) {
+					//this.logger.logDebug("audio.cachewrite() write0 %d %d",  cache.writeoffset, partsize);
+					for (var j = 0; j < this.config.audio.channels; j++) {
 						//for (var i = 0; i < partsize; i++) cache.buffer[j][cache.writeoffset + i] = buffer[j][i];
 						cache.buffer[j].set(buffer[j].subarray(0, partsize), cache.writeoffset);
 					}
 				}
 				if (frames - partsize) {
-					//SAEF_log("audio.cachewrite() write1 %d %d",  0, frames - partsize);
-					for (var j = 0; j < SAEV_config.audio.channels; j++) {
+					//this.logger.logDebug("audio.cachewrite() write1 %d %d",  0, frames - partsize);
+					for (var j = 0; j < this.config.audio.channels; j++) {
 						//for (var i = 0; i < frames - partsize; i++) cache.buffer[j][i] = buffer[j][partsize + i];
 						cache.buffer[j].set(buffer[j].subarray(partsize, partsize + (frames - partsize)));
 					}
 				}
 				cache.writeoffset = frames - partsize;
 			} else {
-				//SAEF_log("audio.cachewrite() write2 %d %d",  cache.writeoffset, frames);
-				for (var j = 0; j < SAEV_config.audio.channels; j++) {
+				//this.logger.logDebug("audio.cachewrite() write2 %d %d",  cache.writeoffset, frames);
+				for (var j = 0; j < this.config.audio.channels; j++) {
 					//for (var i = 0; i < frames; i++) cache.buffer[j][cache.writeoffset + i] = buffer[j][i];
 					cache.buffer[j].set(buffer[j].subarray(0, frames), cache.writeoffset);
 				}
@@ -170,8 +172,8 @@ export class SAEO_Audio {
 		function cacheread(buffer, frames) {
 			var diff = cachediff(cache.writeoffset, cache.readoffset + frames);
 			if (diff < 0) {
-				//SAEF_log("audio.cacheread() clr %d", frames);
-				for (var j = 0; j < SAEV_config.audio.channels; j++) {
+				//this.logger.logDebug("audio.cacheread() clr %d", frames);
+				for (var j = 0; j < this.config.audio.channels; j++) {
 					//SAEF_memset(buffer[j],0, 0, frames);
 					for (var i = 0; i < frames; i++) buffer[j][i] = 0;
 				}
@@ -181,23 +183,23 @@ export class SAEO_Audio {
 				if (cache.readoffset + frames > cache.frames) {
 					var partsize = cache.frames - cache.readoffset;
 					if (partsize) {
-						//SAEF_log("audio.cacheread() read0 %d %d", cache.readoffset, partsize);
-						for (var j = 0; j < SAEV_config.audio.channels; j++) {
+						//this.logger.logDebug("audio.cacheread() read0 %d %d", cache.readoffset, partsize);
+						for (var j = 0; j < this.config.audio.channels; j++) {
 							//for (var i = 0; i < partsize; i++) buffer[j][i] = cache.buffer[j][cache.readoffset + i];
 							buffer[j].set(cache.buffer[j].subarray(cache.readoffset, cache.readoffset + partsize));
 						}
 					}
 					if (frames - partsize) {
-						//SAEF_log("audio.cacheread() read1 %d %d", 0, frames - partsize);
-						for (var j = 0; j < SAEV_config.audio.channels; j++) {
+						//this.logger.logDebug("audio.cacheread() read1 %d %d", 0, frames - partsize);
+						for (var j = 0; j < this.config.audio.channels; j++) {
 							//for (var i = 0; i < frames - partsize; i++) buffer[j][partsize + i] = cache.buffer[j][i];
 							buffer[j].set(cache.buffer[j].subarray(0, frames - partsize), partsize);
 						}
 					}
 					cache.readoffset = frames - partsize;
 				} else {
-					//SAEF_log("audio.cacheread() read2 %d %d", cache.readoffset, frames);
-					for (var j = 0; j < SAEV_config.audio.channels; j++) {
+					//this.logger.logDebug("audio.cacheread() read2 %d %d", cache.readoffset, frames);
+					for (var j = 0; j < this.config.audio.channels; j++) {
 						//for (var i = 0; i < frames; i++) buffer[j][i] = cache.buffer[j][cache.readoffset + i];
 						buffer[j].set(cache.buffer[j].subarray(cache.readoffset, cache.readoffset + frames));
 					}
@@ -205,7 +207,7 @@ export class SAEO_Audio {
 				}
 				return true;
 			} else if (frames < 0)
-				SAEF_warn("audio.cacheread() empty %d", frames);
+				this.logger.logWarn("audio.cacheread() empty %d", frames);
 
 			return false;
 		}
@@ -214,7 +216,7 @@ export class SAEO_Audio {
 		const INV32768 = 1.0 / 32768; /* mul is always faster than div */
 
 		function scaleplay(e, buffer, frames) {
-			var chn = SAEV_config.audio.channels;
+			var chn = this.config.audio.channels;
 			var z = e.outputBuffer.length;
 			if (muted) {
 				for (var ch = 0; ch < chn; ch++) {
@@ -244,7 +246,7 @@ export class SAEO_Audio {
 			else
 				var scale_frames = paula.average.set(paula.currrent);
 
-			//SAEF_log("audio.process_sound_buffer_webaudio() %d %d", paula.currrent, scale_frames);
+			//this.logger.logDebug("audio.process_sound_buffer_webaudio() %d %d", paula.currrent, scale_frames);
 			paula.currrent = 0;
 
 			cacheread(scale.buffer, scale_frames);
@@ -263,20 +265,20 @@ export class SAEO_Audio {
 			//SAER.gui.data.sndbuf_status = 0;
 			//SAER.gui.data.sndbuf = 0;
 			if (!paused && have_sound) {
-				SAEF_log("audio.pause_sound()");
+				this.logger.logDebug("audio.pause_sound()");
 
 				paused = true;
 				//disconnect_sound();
-				//driver.context.suspend().then(function() { SAEF_log("audio.pause_sound() ...done"); });
+				//driver.context.suspend().then(function() { this.logger.logDebug("audio.pause_sound() ...done"); });
 			}
 		}
 
 		function resume_sound() {
 			if (paused && have_sound) {
-				SAEF_log("audio.resume_sound()");
+				this.logger.logDebug("audio.resume_sound()");
 
 				//connect_sound();
-				//driver.context.resume().then(function() { SAEF_log("audio.resume_sound() ...done"); });
+				//driver.context.resume().then(function() { this.logger.logDebug("audio.resume_sound() ...done"); });
 				paused = false;
 				cache.wait = true;
 			}
@@ -304,17 +306,17 @@ export class SAEO_Audio {
 			try {
 				var AudioContextDriver = window.webkitAudioContext || window.AudioContext;
 				driver.context = new AudioContextDriver();
-				driver.processor = driver.context.createScriptProcessor(paula.frames, SAEV_config.audio.channels, SAEV_config.audio.channels);
+				driver.processor = driver.context.createScriptProcessor(paula.frames, this.config.audio.channels, this.config.audio.channels);
 			} catch (e) {
 				if (driver.context) driver.context.close().then(function () { });
 				return false;
 			}
 
-			if (SAEV_config.audio.freq == SAEC_Config_Audio_Freq_Auto)
+			if (this.config.audio.freq == SAEC_Config_Audio_Freq_Auto)
 				used_freq = driver.context.sampleRate;
 
 			else
-				used_freq = SAEV_config.audio.freq;
+				used_freq = this.config.audio.freq;
 
 			if (cache.buffer === null) {
 				cache.frames = paula.frames * CACHE_FRAMES_MULT;
@@ -332,7 +334,7 @@ export class SAEO_Audio {
 			connect_sound();
 			have_sound = true;
 
-			SAEF_info("sae.audio() %d channels, frequency %d/%d Hz, %d frames", SAEV_config.audio.channels, used_freq, driver.context.sampleRate, paula.frames);
+			this.logger.logInfo("sae.audio() %d channels, frequency %d/%d Hz, %d frames", this.config.audio.channels, used_freq, driver.context.sampleRate, paula.frames);
 			return true;
 		}
 
@@ -340,13 +342,13 @@ export class SAEO_Audio {
 			//SAER.gui.data.sndbuf_status = 3;
 			//SAER.gui.data.sndbuf = 0;
 			if (have_sound) {
-				SAEF_log("audio.close_sound() initialised...");
+				this.logger.logDebug("audio.close_sound() initialised...");
 
 				disconnect_sound();
 				if (driver.context.close) {
 					driver.context.close().then(function () {
 						driver.context = null;
-						SAEF_log("audio.close_sound() ...done");
+						this.logger.logDebug("audio.close_sound() ...done");
 					});
 				}
 				paused = false;
@@ -356,12 +358,12 @@ export class SAEO_Audio {
 
 		/*-----------------------------------------------------------------------*/
 		function obtain_sound() {
-			if (SAEV_config.audio.mode >= SAEC_Config_Audio_Mode_On) {
+			if (this.config.audio.mode >= SAEC_Config_Audio_Mode_On) {
 				if (SAEC_info.audio.webAudio)
 					sound_available = true;
 				else {
 					/*if (confirm("'WebAudio' is not supported by this browser.\n\nContinue without audio-playback?"))
-						SAEV_config.audio.mode = SAEC_Config_Audio_Mode_Off_Emul;
+						this.config.audio.mode = SAEC_Config_Audio_Mode_Off_Emul;
 					else*/
 					return SAEE_Audio_RequiresWebAudio;
 				}
@@ -711,7 +713,7 @@ export class SAEO_Audio {
 			data0 += data3;
 
 			var data = data0;
-			if (SAEV_config.audio.filter) data = filter(data, sound_filter_state[0]);
+			if (this.config.audio.filter) data = filter(data, sound_filter_state[0]);
 
 			//PUT_SOUND_WORD_MONO(data);
 			paula.buffer[0][paula.pointer++] = data;
@@ -723,7 +725,7 @@ export class SAEO_Audio {
 			samplexx_anti_handler(datas, 0, AUDIO_CHANNELS_PAULA);
 			var data1 = datas[0] + datas[3] + datas[1] + datas[2];
 
-			if (SAEV_config.audio.filter) data1 = filter(data1, sound_filter_state[0]);
+			if (this.config.audio.filter) data1 = filter(data1, sound_filter_state[0]);
 
 			//PUT_SOUND_WORD_MONO(data1);
 			paula.buffer[0][paula.pointer++] = data1;
@@ -766,7 +768,7 @@ export class SAEO_Audio {
 
 			var data = data0;
 
-			if (SAEV_config.audio.filter) data = filter(data, sound_filter_state[0]);
+			if (this.config.audio.filter) data = filter(data, sound_filter_state[0]);
 
 			//PUT_SOUND_WORD_MONO(data);
 			paula.buffer[0][paula.pointer++] = data;
@@ -830,7 +832,7 @@ export class SAEO_Audio {
 			data0 += data1;
 			var data = data0;
 
-			if (SAEV_config.audio.filter) data = filter(data, sound_filter_state[0]);
+			if (this.config.audio.filter) data = filter(data, sound_filter_state[0]);
 
 			//PUT_SOUND_WORD_MONO (data);
 			paula.buffer[0][paula.pointer++] = data;
@@ -851,7 +853,7 @@ export class SAEO_Audio {
 			data2 = data0 << 1;
 			data3 = data1 << 1;
 
-			if (SAEV_config.audio.filter) {
+			if (this.config.audio.filter) {
 				data2 = filter(data2, sound_filter_state[0]);
 				data3 = filter(data3, sound_filter_state[1]);
 			}
@@ -870,7 +872,7 @@ export class SAEO_Audio {
 			data1 = data1 << 1;
 			data2 = data2 << 1;
 
-			if (SAEV_config.audio.filter) {
+			if (this.config.audio.filter) {
 				data1 = filter(data1, sound_filter_state[0]);
 				data2 = filter(data2, sound_filter_state[1]);
 			}
@@ -919,7 +921,7 @@ export class SAEO_Audio {
 			data3 = data1;
 			data3 = data3 << 1;
 
-			if (SAEV_config.audio.filter) {
+			if (this.config.audio.filter) {
 				data2 = filter(data2, sound_filter_state[0]);
 				data3 = filter(data3, sound_filter_state[1]);
 			}
@@ -989,7 +991,7 @@ export class SAEO_Audio {
 			data3 = data1;
 			data3 = data3 << 1;
 
-			if (SAEV_config.audio.filter) {
+			if (this.config.audio.filter) {
 				data2 = filter(data2, sound_filter_state[0]);
 				data3 = filter(data3, sound_filter_state[1]);
 			}
@@ -1143,7 +1145,7 @@ export class SAEO_Audio {
 
 			cdp.evtime = cdp.per;
 			if (cdp.evtime < SAEC_Events_CYCLE_UNIT)
-				SAEF_error("audio.LOADPER%d bug %d", nr, cdp.evtime);
+				this.logger.logError("audio.LOADPER%d bug %d", nr, cdp.evtime);
 		}
 
 		function audio_state_channel2(nr, perfin) {
@@ -1157,7 +1159,7 @@ export class SAEO_Audio {
 
 			cdp.dmaenstore = chan_ena;
 
-			if (SAEV_config.audio.mode == SAEC_Config_Audio_Mode_Off) {
+			if (this.config.audio.mode == SAEC_Config_Audio_Mode_Off) {
 				zerostate(nr);
 				return;
 			}
@@ -1355,23 +1357,23 @@ export class SAEO_Audio {
 			}
 		}*/
 		this.setup = function () {
-			usehacks = SAEV_config.cpu.model >= SAEC_Config_CPU_Model_68020 || SAEV_config.cpu.speed != SAEC_Config_CPU_Speed_Original; // || (currprefs.cs_hacks & 4);
+			usehacks = this.config.cpu.model >= SAEC_Config_CPU_Model_68020 || this.config.cpu.speed != SAEC_Config_CPU_Speed_Original; // || (currprefs.cs_hacks & 4);
 
 
-			//used_freq = SAEV_config.chipset.ntsc ? PAULA_FREQ_NTSC : PAULA_FREQ_PAL;
+			//used_freq = this.config.chipset.ntsc ? PAULA_FREQ_NTSC : PAULA_FREQ_PAL;
 			used_freq = SAEC_Config_Audio_Freq_44100;
 
-			paula.frames = SAEV_config.audio.bufferFrames;
+			paula.frames = this.config.audio.bufferFrames;
 			paula.buffer = new Array(2); //max channels
 			for (var j = 0; j < paula.buffer.length; j++)
 				paula.buffer[j] = new Int16Array(paula.frames);
 
-			//paula_size = SAEV_config.audio.bufferFrames * SAEV_config.audio.channels * 2;
+			//paula_size = this.config.audio.bufferFrames * this.config.audio.channels * 2;
 			//paula_pointer = paula_buffer;
 			paula.pointer = 0;
 			paula.currrent = 0;
 
-			if (SAEV_config.audio.mode >= SAEC_Config_Audio_Mode_On) {
+			if (this.config.audio.mode >= SAEC_Config_Audio_Mode_On) {
 				if (!setup_sound())
 					return SAEE_Audio_RequiresWebAudio; //can't happen cos we fail on audio.obtain()
 			}
@@ -1379,31 +1381,31 @@ export class SAEO_Audio {
 			next_sample_evtime = scaled_sample_evtime;
 			last_cycles = SAEV_Events_currcycle;
 			//SAER.playfield.compute_vsynctime_ext(); //OWN unused SAEV_Audio_vsynctimebase_orig
-			var sep = SAEV_config.audio.stereoSeparation * 3 >> 1;
+			var sep = this.config.audio.stereoSeparation * 3 >> 1;
 			if (sep >= 15) sep = 16;
 			mixed_mul1 = (MIXED_STEREO_SCALE >> 1) - sep;
 			mixed_mul2 = (MIXED_STEREO_SCALE >> 1) + sep;
 
-			var delay = SAEV_config.audio.stereoDelay;
+			var delay = this.config.audio.stereoDelay;
 			mixed_stereo_size = delay > 0 ? (1 << delay) - 1 : 0;
 
 			mixed_on = sep < MIXED_STEREO_MAX || mixed_stereo_size > 0;
 			if (mixed_on) {
-				SAEF_log("audio.setup() mixing enabled");
+				this.logger.logDebug("audio.setup() mixing enabled");
 				saved_ptr = 0;
 				SAEF_memset(right_word_saved, 0, 0, SOUND_MAX_DELAY_BUFFER);
 			}
 
 			led_filter_forced = -1; // always off
 			sound_use_filter = 0;
-			if (SAEV_config.audio.filter) {
-				if (SAEV_config.audio.filter == SAEC_Config_Audio_Filter_On)
+			if (this.config.audio.filter) {
+				if (this.config.audio.filter == SAEC_Config_Audio_Filter_On)
 					led_filter_forced = 1;
-				if (SAEV_config.audio.filter == SAEC_Config_Audio_Filter_Emul)
+				if (this.config.audio.filter == SAEC_Config_Audio_Filter_Emul)
 					led_filter_forced = 0;
-				if (SAEV_config.audio.filterType == SAEC_Config_Audio_FilterType_A500)
+				if (this.config.audio.filterType == SAEC_Config_Audio_FilterType_A500)
 					sound_use_filter = FILTER_MODEL_A500;
-				else if (SAEV_config.audio.filterType == SAEC_Config_Audio_FilterType_A1200)
+				else if (this.config.audio.filterType == SAEC_Config_Audio_FilterType_A1200)
 					sound_use_filter = FILTER_MODEL_A1200;
 			}
 			a500e_filter1_a0 = rc_calculate_a0(used_freq, 6200);
@@ -1411,30 +1413,30 @@ export class SAEO_Audio {
 			filter_a0 = rc_calculate_a0(used_freq, 7000);
 			this.led_filter_audio();
 
-			switch (SAEV_config.audio.interpol) {
+			switch (this.config.audio.interpol) {
 				case SAEC_Config_Audio_Interpol_None: {
-					switch (SAEV_config.audio.channels) {
+					switch (this.config.audio.channels) {
 						case SAEC_Config_Audio_Channels_Mono: sample_handler = sample16_mono_handler; break;
 						case SAEC_Config_Audio_Channels_Stereo: sample_handler = sample16s_handler; break;
 					}
 					break;
 				}
 				case SAEC_Config_Audio_Interpol_Anti: {
-					switch (SAEV_config.audio.channels) {
+					switch (this.config.audio.channels) {
 						case SAEC_Config_Audio_Channels_Mono: sample_handler = sample16i_anti_mono_handler; break;
 						case SAEC_Config_Audio_Channels_Stereo: sample_handler = sample16si_anti_handler; break;
 					}
 					break;
 				}
 				case SAEC_Config_Audio_Interpol_RH: {
-					switch (SAEV_config.audio.channels) {
+					switch (this.config.audio.channels) {
 						case SAEC_Config_Audio_Channels_Mono: sample_handler = sample16i_rh_mono_handler; break;
 						case SAEC_Config_Audio_Channels_Stereo: sample_handler = sample16si_rh_handler; break;
 					}
 					break;
 				}
 				case SAEC_Config_Audio_Interpol_Crux: {
-					switch (SAEV_config.audio.channels) {
+					switch (this.config.audio.channels) {
 						case SAEC_Config_Audio_Channels_Mono: sample_handler = sample16i_crux_mono_handler; break;
 						case SAEC_Config_Audio_Channels_Stereo: sample_handler = sample16si_crux_handler; break;
 					}
@@ -1442,10 +1444,10 @@ export class SAEO_Audio {
 				}
 			}
 			sample_prehandler = null;
-			if (SAEV_config.audio.interpol == SAEC_Config_Audio_Interpol_Anti)
+			if (this.config.audio.interpol == SAEC_Config_Audio_Interpol_Anti)
 				sample_prehandler = anti_prehandler;
 
-			if (SAEV_config.audio.mode == SAEC_Config_Audio_Mode_Off) {
+			if (this.config.audio.mode == SAEC_Config_Audio_Mode_Off) {
 				SAER_Events_eventtab[SAEC_Events_EV_AUDIO].active = false;
 				SAER.events.schedule();
 			} else {
@@ -1518,7 +1520,7 @@ export class SAEO_Audio {
 		this.update = function () {
 			var n_cycles = 0;
 
-			if (SAEV_config.audio.mode == SAEC_Config_Audio_Mode_Off || audio_work_to_do == 0) {
+			if (this.config.audio.mode == SAEC_Config_Audio_Mode_Off || audio_work_to_do == 0) {
 				last_cycles = SAEV_Events_currcycle;
 				return;
 			}
@@ -1540,7 +1542,7 @@ export class SAEO_Audio {
 					rounded++; */
 				rounded = Math.round(next_sample_evtime);
 
-				if (SAEV_config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul && best_evtime > rounded)
+				if (this.config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul && best_evtime > rounded)
 					best_evtime = rounded;
 
 				if (best_evtime > n_cycles)
@@ -1548,7 +1550,7 @@ export class SAEO_Audio {
 
 				/* Decrease time-to-wait counters */
 				next_sample_evtime -= best_evtime;
-				if (SAEV_config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul) {
+				if (this.config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul) {
 					if (sample_prehandler !== null)
 						sample_prehandler(Math.floor(best_evtime * SAEC_Events_CYCLE_UNIT_INV));
 				}
@@ -1560,7 +1562,7 @@ export class SAEO_Audio {
 
 				n_cycles -= best_evtime;
 
-				if (SAEV_config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul) {
+				if (this.config.audio.mode > SAEC_Config_Audio_Mode_Off_Emul) {
 					/* Test if new sample needs to be outputted */
 					if (rounded == best_evtime) {
 						/* Before the following addition, next_sample_evtime is in range [-0.5, 0.5) */
@@ -1574,7 +1576,7 @@ export class SAEO_Audio {
 					if (audio_channel[i].evtime == 0) {
 						audio_state_channel(i, true);
 						if (audio_channel[i].evtime == 0) {
-							SAEF_error("audio.update() evtime == 0 (channel %d)", i);
+							this.logger.logError("audio.update() evtime == 0 (channel %d)", i);
 							audio_channel[i].evtime = MAX_EV;
 						}
 					}
@@ -1589,7 +1591,7 @@ export class SAEO_Audio {
 		};
 
 		this.hsync = function () {
-			//if (SAEV_config.audio.mode == SAEC_Config_Audio_Mode_Off) return; //OWN done in custom/devices_hsync()
+			//if (this.config.audio.mode == SAEC_Config_Audio_Mode_Off) return; //OWN done in custom/devices_hsync()
 			if (audio_work_to_do > 0) {
 				audio_work_to_do--;
 				if (audio_work_to_do == 0)
@@ -1631,7 +1633,7 @@ export class SAEO_Audio {
 			audio_activate();
 			this.update();
 
-			v = v & (SAEV_config.chipset.mask == SAEC_Config_Chipset_Mask_OCS ? 7 : 31); //OWN
+			v = v & (this.config.chipset.mask == SAEC_Config_Chipset_Mask_OCS ? 7 : 31); //OWN
 
 
 
@@ -1674,7 +1676,7 @@ export class SAEO_Audio {
 
 			if (cdp.per == PERIOD_MAX - 1 && per != PERIOD_MAX - 1) {
 				cdp.evtime = SAEC_Events_CYCLE_UNIT;
-				if (SAEV_config.audio.mode != SAEC_Config_Audio_Mode_Off) {
+				if (this.config.audio.mode != SAEC_Config_Audio_Mode_Off) {
 					schedule_audio();
 					SAER.events.schedule();
 				}

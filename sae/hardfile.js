@@ -17,6 +17,8 @@
 | Note: ported from WinUAE 3.2.x
 -------------------------------------------------------------------------*/
 
+import { SAEF_memset } from "./utils";
+
 function SAEO_Hardfile_Data() { //hardfiledata
 	this.virtsize = 0; //u64, virtual size
 	this.physsize = 0; //u64, physical size (dynamic disk)

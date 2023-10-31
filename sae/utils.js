@@ -188,7 +188,7 @@ function SAEF_timeval_to_amiga(tv, amiga, tickcount) {
 
 /*-----------------------------------------------------------------------*/
 
-function SAEF_memset(dst,dsto, value, length) {
+export function SAEF_memset(dst,dsto, value, length) {
 	for (var i = dsto, j = dsto + length; i < j; i++)
 		dst[i] = value;
 }

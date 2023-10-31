@@ -1,4 +1,5 @@
 import { SAEC_Playfield_CLOCK_PAL, SAEC_Playfield_CLOCK_NTSC, SAEC_Events_CYCLE_UNIT } from './constants';
+import { SAEF_memset } from './utils';
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator

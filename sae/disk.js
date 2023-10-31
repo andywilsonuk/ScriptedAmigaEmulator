@@ -1,4 +1,5 @@
 import { SAEC_Events_CYCLE_UNIT } from "./constants";
+import { SAEF_memset } from "./utils";
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator

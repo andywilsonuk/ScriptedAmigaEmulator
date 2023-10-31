@@ -1,5 +1,6 @@
 import { SAEC_Memory_addrbank_flag_PPCIOSPACE, SAEC_Memory_addrbank_flag_ROMIN } from "./constants";
 import { SAEO_Memory_addrbank } from "./memory";
+import { SAEF_memset } from "./utils";
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator

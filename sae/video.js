@@ -17,6 +17,8 @@
 | Note: ported from WinUAE 3.2.x
 -------------------------------------------------------------------------*/
 
+import { SAEF_memset } from "./utils";
+
 /*---------------------------------*/
 
 export class SAEO_Video {

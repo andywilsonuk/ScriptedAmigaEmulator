@@ -167,8 +167,8 @@ function fixConfig() {
 	if (cfg.video.enabled) {
 		if (!inf.video.canvas && !inf.video.webGL)
 			cfg.video.enabled = false;
-		else if (SAEV_config.video.api == SAEC_Config_Video_API_WebGL && !inf.video.webGL)
-			SAEV_config.video.api = SAEC_Config_Video_API_Canvas;
+		else if (cfg.video.api == SAEC_Config_Video_API_WebGL && !inf.video.webGL)
+			cfg.video.api = SAEC_Config_Video_API_Canvas;
 	}
 	/* audio */
 	if (cfg.audio.mode >= SAEC_Config_Audio_Mode_On) {

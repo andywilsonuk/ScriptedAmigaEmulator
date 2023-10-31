@@ -1040,11 +1040,11 @@ function fixAdvandedConfig() {
 	if (cfg.video.enabled) {
 		if (!inf.video.canvas && !inf.video.webGL)
 			cfg.video.enabled = false;
-		else if (SAEV_config.video.api == SAEC_Config_Video_API_WebGL && !inf.video.webGL)
-			SAEV_config.video.api = SAEC_Config_Video_API_Canvas;
+		else if (sae.getConfig().video.api == SAEC_Config_Video_API_WebGL && !inf.video.webGL)
+			sae.getConfig().video.api = SAEC_Config_Video_API_Canvas;
 
-		if (SAEV_config.video.cursor == SAEC_Config_Video_Cursor_Lock && !inf.video.pointerLock)
-			SAEV_config.video.cursor = SAEC_Config_Video_Cursor_Show;
+		if (sae.getConfig().video.cursor == SAEC_Config_Video_Cursor_Lock && !inf.video.pointerLock)
+			sae.getConfig().video.cursor = SAEC_Config_Video_Cursor_Show;
 	}
 	/* audio */
 	if (cfg.audio.mode >= SAEC_Config_Audio_Mode_On) {

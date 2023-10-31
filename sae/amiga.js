@@ -2,7 +2,7 @@ import { SAEO_Audio } from "./audio";
 import { SAEO_AutoConf } from "./autoconf";
 import { SAEO_Blitter } from "./blitter";
 import { SAEO_CIA } from "./cia";
-import { SAEO_Configuration } from "./config";
+import { SAEC_Config_Debug_Level_Info, SAEC_Config_Debug_Level_Warn, SAEO_Configuration } from "./config";
 import { SAEO_Copper } from "./copper";
 import { SAEO_CPU } from "./cpu";
 import { SAEO_Custom, SAEO_Devices } from "./custom";
@@ -15,6 +15,7 @@ import { SAEO_Gayle } from "./gayle";
 import { SAEO_Hardfile } from "./hardfile";
 import { SAEO_IDE } from "./ide";
 import { SAEO_Input } from "./input";
+import { Logger } from "./logger";
 import { SAEO_M68K } from "./m68k";
 import { SAEO_Memory } from "./memory";
 import { SAEO_Playfield } from "./playfield";
@@ -285,62 +286,17 @@ function SAEF_sleep(ms) {
 	while ((performance.now() - start) < ms) {} /* pretty nasty */
 }
 
-/*---------------------------------*/
-/* debug */
-
-function SAEF_log() {
-	if (SAEV_config.debug.level >= SAEC_Config_Debug_Level_Log && arguments.length) {
-		var str = sprintf.apply(this, arguments);
-		if (console.log) console.log(str);
-	}
-}
-function SAEF_info() {
-	if (SAEV_config.debug.level >= SAEC_Config_Debug_Level_Info && arguments.length) {
-		var str = sprintf.apply(this, arguments);
-		if (console.info) console.info(str);
-	}
-}
-function SAEF_warn() {
-	if (SAEV_config.debug.level >= SAEC_Config_Debug_Level_Warn && arguments.length) {
-		var str = sprintf.apply(this, arguments);
-		if (console.warn) console.warn(str);
-
-	}
-}
-function SAEF_error() {
-	if (SAEV_config.debug.level >= SAEC_Config_Debug_Level_Error && arguments.length) {
-		var str = sprintf.apply(this, arguments);
-		if (console.error) console.error(str);
-	}
-}
-function SAEF_fatal() {
-	var argumentsArray = Array.prototype.slice.call(arguments);
-	var err = argumentsArray[0];
-	var str = sprintf.apply(this, argumentsArray.slice(1));
-	if (console.error) console.error(str);
-	throw new SAEO_Error(err, str);
-}
-
-function SAEF_assert(cond) {
-	if (!cond) {
-		var err = SAEE_Assert;
-		var str = "Assertion failed. This is a bug in SAE.";
-		if (console.error) console.error(str);
-		throw new SAEO_Error(err, str);
-	}
-}
-
-/*---------------------------------*/
-
 export class ScriptedAmigaEmulator {
 	constructor() {
 		SAER = this;
 
-		this.audio = new SAEO_Audio();
+		this.logger = new Logger();
+		this.config = new SAEO_Configuration(this.logger);
+		this.logger.setLogConfig(this.config.underlyingConfig.debug);
+		this.audio = new SAEO_Audio(this.logger, this.config.underlyingConfig);
 		this.autoconf = new SAEO_AutoConf();
 		this.blitter = new SAEO_Blitter();
 		this.cia = new SAEO_CIA();
-		this.config = new SAEO_Configuration();
 		this.copper = new SAEO_Copper();
 		this.cpu = new SAEO_CPU();
 		this.custom = new SAEO_Custom();
@@ -420,24 +376,24 @@ export class ScriptedAmigaEmulator {
 		this.start_program = function () {
 			this.do_start_program();
 
-			if (typeof SAEV_config.hook.event.started === "function")
-				SAEV_config.hook.event.started();
+			if (typeof this.config.getConfig().hook.event.started === "function")
+				this.config.getConfig().hook.event.started();
 		};
 
 		this.leave_program = function () {
 			this.dump();
 			this.do_leave_program();
 
-			if (typeof SAEV_config.hook.event.stopped === "function")
-				SAEV_config.hook.event.stopped();
+			if (typeof this.config.getConfig().hook.event.stopped === "function")
+				this.config.getConfig().hook.event.stopped();
 		};
 
 		this.pause_program = function (p) {
 			this.audio.pauseResume(p);
 			this.events.pauseResume(p);
 
-			if (typeof SAEV_config.hook.event.paused === "function")
-				SAEV_config.hook.event.paused(p);
+			if (typeof this.config.getConfig().hook.event.paused === "function")
+				this.config.getConfig().hook.event.paused(p);
 		};
 
 		/*---------------------------------*/
@@ -453,7 +409,7 @@ export class ScriptedAmigaEmulator {
 			return SAEC_info;
 		};
 		this.getConfig = function () {
-			return SAEV_config;
+			return this.config.underlyingConfig;
 		};
 
 		this.setDefaults = function () {
@@ -464,16 +420,16 @@ export class ScriptedAmigaEmulator {
 		};
 
 		this.setMountInfoDefaults = function (num) {
-			var ci = SAEV_config.mount.config[num].ci;
+			var ci = this.config.getConfig().mount.config[num].ci;
 			this.filesys.uci_set_defaults(ci, false);
 		};
 
 		this.start = function () {
 			if (SAER.running) {
-				SAEF_warn("sae.start() emulation already running");
+				this.SAEF_warn("sae.start() emulation already running");
 				return SAEE_AlreadyRunning;
 			}
-			SAEF_info("sae.start() starting...");
+			this.SAEF_info("sae.start() starting...");
 
 			var err;
 			if ((err = this.config.setup()) != SAEE_None)
@@ -510,7 +466,7 @@ export class ScriptedAmigaEmulator {
 					if ((err = this.video.setup(true)) == SAEE_None) {
 						if ((err = this.audio.setup()) == SAEE_None) {
 							this.start_program();
-							SAEF_info("sae.start() ...done");
+							this.SAEF_info("sae.start() ...done");
 							return SAEE_None;
 						}
 						this.video.cleanup();
@@ -524,13 +480,13 @@ export class ScriptedAmigaEmulator {
 
 		this.stop = function () {
 			if (this.running) {
-				SAEF_info("sae.stop()");
+				this.SAEF_info("sae.stop()");
 				if (SAEV_command != -SAEC_command_Quit)
 					SAEV_command = -SAEC_command_Quit;
 
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.stop() emulation not running");
+				this.SAEF_warn("sae.stop() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -539,7 +495,7 @@ export class ScriptedAmigaEmulator {
 			if (typeof hard == "undefined") var hard = false;
 			if (typeof keyboard == "undefined") var keyboard = false;
 			if (this.running) {
-				SAEF_info("sae.reset() hard %d, keyboard %d", hard ? 1 : 0, keyboard ? 1 : 0);
+				this.SAEF_info("sae.reset() hard %d, keyboard %d", hard ? 1 : 0, keyboard ? 1 : 0);
 				if (SAEV_command == 0) {
 					SAEV_command = -SAEC_command_Reset; /* soft */
 					if (keyboard)
@@ -549,7 +505,7 @@ export class ScriptedAmigaEmulator {
 				}
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.reset() emulation not running");
+				this.SAEF_warn("sae.reset() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -557,16 +513,16 @@ export class ScriptedAmigaEmulator {
 		this.pause = function (pause) {
 			if (this.running) {
 				if (!this.paused && pause) {
-					SAEF_info("sae.pause() pausing emulation");
+					this.SAEF_info("sae.pause() pausing emulation");
 					SAEV_command = SAEC_command_Pause;
 				}
 				else if (this.paused && !pause) {
-					SAEF_info("sae.pause() resuming emulation");
+					this.SAEF_info("sae.pause() resuming emulation");
 					SAEV_command = SAEC_command_Resume;
 				}
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.pause() emulation not running");
+				this.SAEF_warn("sae.pause() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -581,7 +537,7 @@ export class ScriptedAmigaEmulator {
 					SAEF_log("sae.mute() playing audio");
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.mute() emulation not running");
+				this.SAEF_warn("sae.mute() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -601,19 +557,19 @@ export class ScriptedAmigaEmulator {
 					return SAEE_Video_RequiresFullscreen;
 				}
 			} else {
-				SAEF_warn("sae.screen() emulation not running");
+				this.SAEF_warn("sae.screen() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
 
 		this.insert = function (unit) {
 			if (this.running) {
-				var file = SAEV_config.floppy.drive[unit].file;
+				var file = this.getConfig().floppy.drive[unit].file;
 				this.disk.insert(unit, file);
-				SAEF_info("sae.insert() unit %d inserted, name '%s', size %d, protected %d", unit, file.name, file.size, file.prot ? 1 : 0);
+				this.SAEF_info("sae.insert() unit %d inserted, name '%s', size %d, protected %d", unit, file.name, file.size, file.prot ? 1 : 0);
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.insert() emulation not running");
+				this.SAEF_warn("sae.insert() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -621,10 +577,10 @@ export class ScriptedAmigaEmulator {
 		this.eject = function (unit) {
 			if (this.running) {
 				this.disk.eject(unit);
-				SAEF_info("sae.eject() unit %d ejected", unit);
+				this.SAEF_info("sae.eject() unit %d ejected", unit);
 				return SAEE_None;
 			} else {
-				SAEF_warn("sae.eject() emulation not running");
+				this.SAEF_warn("sae.eject() emulation not running");
 				return SAEE_NotRunning;
 			}
 		};
@@ -649,6 +605,6 @@ export class ScriptedAmigaEmulator {
 		};
 
 		/*---------------------------------*/
-		SAEF_info("SAE %d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
+		this.SAEF_info("SAE %d.%d.%d", SAEC_Version, SAEC_Revision, SAEC_Patch);
 	}
 }

@@ -1,4 +1,5 @@
-import { SAEC_Memory_addrbank_flag_CHIPRAM, SAEC_Memory_addrbank_flag_CIA, SAEC_Memory_addrbank_flag_IO, SAEC_Memory_addrbank_flag_NONE, SAEC_Memory_addrbank_flag_RAM } from "./constants";
+import { SAEC_Memory_addrbank_flag_CHIPRAM, SAEC_Memory_addrbank_flag_CIA, SAEC_Memory_addrbank_flag_IO, SAEC_Memory_addrbank_flag_NONE, SAEC_Memory_addrbank_flag_RAM, SAEC_Memory_addrbank_flag_ROM, SAEC_Memory_addrbank_flag_THREADSAFE } from "./constants";
+import { SAEF_memset } from "./utils";
 
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
@@ -67,7 +68,7 @@ typedef void (REGPARAM3 *mem_put_func)(uaecptr, uae_u32) REGPARAM;
 typedef uae_u8 *(REGPARAM3 *xlate_func)(uaecptr) REGPARAM;
 typedef int (REGPARAM3 *check_func)(uaecptr, uae_u32) REGPARAM;*/
 
-function SAEO_Memory_addrbank_sub(bank,offset) {
+export function SAEO_Memory_addrbank_sub(bank,offset) {
 	this.bank = bank; //addrbank *
 	this.offset = offset; //u32
 	this.suboffset = 0;
@@ -186,7 +187,7 @@ function SAEF_Memory_dummyPut8(addr, b) {
 function SAEF_Memory_dummyCheck(addr, size) {
 	return 0;
 }
-var SAEV_Memory_dummyBank = new SAEO_Memory_addrbank(
+export const SAEV_Memory_dummyBank = new SAEO_Memory_addrbank(
 	SAEF_Memory_dummyGet32, SAEF_Memory_dummyGet16, SAEF_Memory_dummyGet8,
 	SAEF_Memory_dummyPut32, SAEF_Memory_dummyPut16, SAEF_Memory_dummyPut8,
 	SAEF_Memory_defaultXLate, SAEF_Memory_dummyCheck, null, null, null,
@@ -197,52 +198,52 @@ var SAEV_Memory_dummyBank = new SAEO_Memory_addrbank(
 
 /*---------------------------------*/
 
-function SAEF_Memory_subBankGet32(addr) {
+export function SAEF_Memory_subBankGet32(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.get32(ptr.value);
 }
-function SAEF_Memory_subBankGet16(addr) {
+export function SAEF_Memory_subBankGet16(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.get16(ptr.value);
 }
-function SAEF_Memory_subBankGet8(addr) {
+export function SAEF_Memory_subBankGet8(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.get8(ptr.value);
 }
-function SAEF_Memory_subBankPut32(addr, v) {
+export function SAEF_Memory_subBankPut32(addr, v) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	ab.put32(ptr.value, v);
 }
-function SAEF_Memory_subBankPut16(addr, v) {
+export function SAEF_Memory_subBankPut16(addr, v) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	ab.put16(ptr.value, v);
 }
-function SAEF_Memory_subBankPut8(addr, v) {
+export function SAEF_Memory_subBankPut8(addr, v) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	ab.put8(ptr.value, v);
 }
-function SAEF_Memory_subBankGetInst32(addr) {
+export function SAEF_Memory_subBankGetInst32(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.getInst32(ptr.value);
 }
-function SAEF_Memory_subBankGetInst16(addr) {
+export function SAEF_Memory_subBankGetInst16(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.getInst16(ptr.value);
 }
-function SAEF_Memory_subBankCheck(addr, size) {
+export function SAEF_Memory_subBankCheck(addr, size) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.check(ptr.value, size);
 }
-function SAEF_Memory_subBankXLate(addr) {
+export function SAEF_Memory_subBankXLate(addr) {
 	var ptr = { value:addr };
 	var ab = SAER.memory.getSubBank(ptr);
 	return ab.xlateaddr(ptr.value);

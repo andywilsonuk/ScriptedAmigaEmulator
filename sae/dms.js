@@ -22,6 +22,8 @@
 | Handles the processing of a single DMS archive
 -------------------------------------------------------------------------*/
 
+import { SAEF_memset } from "./utils";
+
 function SAEO_DMS() {
 	const DMS_LOG = 0 ? true : false;
 

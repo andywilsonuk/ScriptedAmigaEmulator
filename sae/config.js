@@ -1,3 +1,5 @@
+import { SAEC_Config_Debug_Level_Fatal, SAEC_Video_DEF_AMIGA_HEIGHT, SAEC_Video_DEF_AMIGA_WIDTH } from "./constants";
+
 /*-------------------------------------------------------------------------
 | SAE - Scripted Amiga Emulator
 | https://github.com/naTmeg/ScriptedAmigaEmulator
@@ -20,8 +22,6 @@
 | because it's easier to enable features in the future...
 -------------------------------------------------------------------------*/
 /* global variables */
-
-import { SAEC_Video_DEF_AMIGA_HEIGHT, SAEC_Video_DEF_AMIGA_WIDTH } from "./constants";
 
 var SAEV_config = {};
 
@@ -396,15 +396,6 @@ const SAEC_Config_Ports_Fire_None = "None";
 const SAEC_Config_Ports_Device_None = -1;
 
 /*---------------------------------*/
-/* debug */
-
-const SAEC_Config_Debug_Level_Fatal = 0;
-const SAEC_Config_Debug_Level_Error = 1;
-const SAEC_Config_Debug_Level_Warn = 2;
-const SAEC_Config_Debug_Level_Info = 3;
-const SAEC_Config_Debug_Level_Log = 4;
-
-/*---------------------------------*/
 /* the main config-object */
 
 function SAEO_Config() {
@@ -758,7 +749,7 @@ function SAEO_Config() {
 	};
 
 	this.debug = {
-		level: 0
+		level: SAEC_Config_Debug_Level_Fatal
 	};
 
 	this.chipset.refresh = new Array(SAEC_Config_Chipset_CR_TOTAL);
@@ -785,7 +776,7 @@ function SAEO_Config() {
 /*---------------------------------*/
 
 export class SAEO_Configuration {
-	constructor() {
+	constructor(logger) {
 		/*---------------------------------*/
 		/* rom */
 		/*const MAX_DUPLICATE_EXPANSION_BOARDS = 4;
@@ -899,24 +890,25 @@ export class SAEO_Configuration {
 		const TABLET_MOUSEHACK 1
 		const TABLET_REAL 2*/
 		/*-----------------------------------------------------------------------*/
-		SAEV_config = new SAEO_Config();
-		default_prefs(SAEV_config);
+		this.logger = logger;
+		this.underlyingConfig = new SAEO_Config();
+		default_prefs(this.underlyingConfig);
 
 		/*---------------------------------*/
 		this.setup = function () {
-			if (fixup_prefs(SAEV_config))
+			if (fixup_prefs(this.underlyingConfig))
 				return SAEE_None;
 
 			return SAEE_Config_Invalid;
 		};
 
 		this.setModel = function (model, config) {
-			built_in_prefs(SAEV_config, model, config, 2, 0);
+			built_in_prefs(this.underlyingConfig, model, config, 2, 0);
 			return SAEE_None;
 		};
 
 		this.setDefaults = function () {
-			default_prefs(SAEV_config);
+			default_prefs(this.underlyingConfig);
 			return SAEE_None;
 		};
 
@@ -1964,19 +1956,19 @@ export class SAEO_Configuration {
 			if (wh.special)
 				return;
 			if (wh.width < SAEC_Video_MIN_UAE_WIDTH) {
-				SAEF_warn("config.fixup_prefs_dim2() Width (%d) min is %d.", wh.width, SAEC_Video_MIN_UAE_WIDTH);
+				this.logger.logWarn("config.fixup_prefs_dim2() Width (%d) min is %d.", wh.width, SAEC_Video_MIN_UAE_WIDTH);
 				wh.width = SAEC_Video_MIN_UAE_WIDTH;
 			}
 			if (wh.height < SAEC_Video_MIN_UAE_HEIGHT) {
-				SAEF_warn("config.fixup_prefs_dim2() Height (%d) min is %d.", wh.height, SAEC_Video_MIN_UAE_HEIGHT);
+				this.logger.logWarn("config.fixup_prefs_dim2() Height (%d) min is %d.", wh.height, SAEC_Video_MIN_UAE_HEIGHT);
 				wh.height = SAEC_Video_MIN_UAE_HEIGHT;
 			}
 			if (wh.width > SAEC_Video_MAX_UAE_WIDTH) {
-				SAEF_warn("config.fixup_prefs_dim2() Width (%d) max is %d.", wh.width, SAEC_Video_MAX_UAE_WIDTH);
+				this.logger.logWarn("config.fixup_prefs_dim2() Width (%d) max is %d.", wh.width, SAEC_Video_MAX_UAE_WIDTH);
 				wh.width = SAEC_Video_MAX_UAE_WIDTH;
 			}
 			if (wh.height > SAEC_Video_MAX_UAE_HEIGHT) {
-				SAEF_warn("config.fixup_prefs_dim2() Height (%d) max is %d.", wh.height, SAEC_Video_MAX_UAE_HEIGHT);
+				this.logger.logWarn("config.fixup_prefs_dim2() Height (%d) max is %d.", wh.height, SAEC_Video_MAX_UAE_HEIGHT);
 				wh.height = SAEC_Video_MAX_UAE_HEIGHT;
 			}
 		}
@@ -2016,20 +2008,20 @@ export class SAEO_Configuration {
 
 				/*var f = p.video.gf[i];
 				if (f.gfx_filter == 0 && ((f.gfx_filter_autoscale && p.video.api == SAEC_Config_Video_API_Canvas) || (p.video.apmode[0].gfx_vsyncmode))) {
-					SAEF_warn("config.fixup_prefs_dimensions() Current settings require at least null filter enabled. Enabling filter...");
+					this.logger.logWarn("config.fixup_prefs_dimensions() Current settings require at least null filter enabled. Enabling filter...");
 					f.gfx_filter = 1;
 				}*/
 				/*if (i == 0) {
 					if (f.gfx_filter == 0 && p.monitoremu) {
-						SAEF_warn("config.fixup_prefs_dimensions() Display port adapter emulation require at least null filter enabled. Enabling filter...");
+						this.logger.logWarn("config.fixup_prefs_dimensions() Display port adapter emulation require at least null filter enabled. Enabling filter...");
 						f.gfx_filter = 1;
 					}
 					if (f.gfx_filter == 0 && p.cs_cd32fmv) {
-						SAEF_warn("config.fixup_prefs_dimensions() CD32 MPEG module overlay support require at least null filter enabled. Enabling filter...");
+						this.logger.logWarn("config.fixup_prefs_dimensions() CD32 MPEG module overlay support require at least null filter enabled. Enabling filter...");
 						f.gfx_filter = 1;
 					}
 					if (f.gfx_filter == 0 && (p.chipset.genlock && p.genlock_image)) {
-						SAEF_warn("config.fixup_prefs_dimensions() Genlock emulation require at least null filter enabled. Enabling filter...");
+						this.logger.logWarn("config.fixup_prefs_dimensions() Genlock emulation require at least null filter enabled. Enabling filter...");
 						f.gfx_filter = 1;
 					}
 				}*/
@@ -2059,11 +2051,11 @@ export class SAEO_Configuration {
 				p.cpu.clock.frequency = 0;
 
 			/*if (p.cpu.model >= SAEC_Config_CPU_Model_68040 && p.cpu.addressSpace24) {
-				SAEF_error("24-bit address space is not supported with 68040/060 configurations.");
+				this.logger.logError("24-bit address space is not supported with 68040/060 configurations.");
 				p.cpu.addressSpace24 = false;
 			}
 			if (p.cpu.model < SAEC_Config_CPU_Model_68020 && p.fpu_model && (p.cpu.compatible || p.cpu_memory_cycle_exact)) {
-				SAEF_error("FPU is not supported with 68000/010 configurations.");
+				this.logger.logError("FPU is not supported with 68000/010 configurations.");
 				p.fpu_model = 0;
 			}
 			switch (p.cpu.model) {
@@ -2083,7 +2075,7 @@ export class SAEO_Configuration {
 			}
     
 			if ((p.cpu.model < SAEC_Config_CPU_Model_68030 || p.cachesize) && p.mmu_model) {
-				SAEF_warn("config.fixup_cpu() MMU emulation requires 68030/040/060 and it is not JIT compatible.");
+				this.logger.logWarn("config.fixup_cpu() MMU emulation requires 68030/040/060 and it is not JIT compatible.");
 				p.mmu_model = 0;
 			}
     
@@ -2095,12 +2087,12 @@ export class SAEO_Configuration {
 			#endif
 			#if 0
 			if (p.chipset.blitter.immediate && p.chipset.blitter.cycle_exact) {
-				SAEF_error("Cycle-exact and immediate blitter can't be enabled simultaneously.");
+				this.logger.logError("Cycle-exact and immediate blitter can't be enabled simultaneously.");
 				p.chipset.blitter.immediate = false;
 			}
 			#endif*/
 			if (p.chipset.blitter.immediate && p.chipset.blitter.waiting) {
-				SAEF_warn("config.fixup_cpu() Immediate blitter and waiting blits can't be enabled simultaneously. Disabling waiting blits...");
+				this.logger.logWarn("config.fixup_cpu() Immediate blitter and waiting blits can't be enabled simultaneously. Disabling waiting blits...");
 				p.chipset.blitter.waiting = 0;
 			}
 			/*if (p.cpu_memory_cycle_exact)
@@ -2108,7 +2100,7 @@ export class SAEO_Configuration {
     
 			if (p.cpu_memory_cycle_exact && p.audio.mode == SAEC_Config_Audio_Mode_Off) {
 				p.audio.mode = SAEC_Config_Audio_Mode_Off_Emul;
-				SAEF_error("Cycle-exact mode requires at least Disabled but emulated sound setting.");
+				this.logger.logError("Cycle-exact mode requires at least Disabled but emulated sound setting.");
 			}*/
 		}
 
@@ -2121,28 +2113,28 @@ export class SAEO_Configuration {
 			if (((p.memory.chipSize & (p.memory.chipSize - 1)) != 0 && p.memory.chipSize != 0x180000)
 				|| p.memory.chipSize < 0x20000
 				|| p.memory.chipSize > 0x800000) {
-				SAEF_warn("config.fixup_prefs() Unsupported chipmem size %d (0x%x). Setting to 2M...", p.memory.chipSize, p.memory.chipSize);
+				this.logger.logWarn("config.fixup_prefs() Unsupported chipmem size %d (0x%x). Setting to 2M...", p.memory.chipSize, p.memory.chipSize);
 				p.memory.chipSize = 0x200000;
 				//err = 1;
 			}
 
 			if ((p.memory.z2FastSize & (p.memory.z2FastSize - 1)) != 0 || (p.memory.z2FastSize != 0 && (p.memory.z2FastSize < 0x10000 || p.memory.z2FastSize > 0x800000))) {
-				SAEF_warn("config.fixup_prefs() Unsupported Zorro II fastmem size %d (0x%x). Disabling fastmem...", p.memory.z2FastSize, p.memory.z2FastSize);
+				this.logger.logWarn("config.fixup_prefs() Unsupported Zorro II fastmem size %d (0x%x). Disabling fastmem...", p.memory.z2FastSize, p.memory.z2FastSize);
 				p.memory.z2FastSize = 0;
 				//err = 1;
 			}
 			/*if ((p.fastmem2_size & (p.fastmem2_size - 1)) != 0 || (p.fastmem2_size != 0 && (p.fastmem2_size < 0x10000 || p.fastmem2_size > 0x800000))) {
-				SAEF_error("Unsupported fastmem2 size %d (0x%x).", p.fastmem2_size, p.fastmem2_size);
+				this.logger.logError("Unsupported fastmem2 size %d (0x%x).", p.fastmem2_size, p.fastmem2_size);
 				p.fastmem2_size = 0;
 				err = 1;
 			}*/
 			/*if (p.rtgmem_size > max_z3fastmem && p.rtgmem_type == GFXBOARD_UAE_Z3) {
-				SAEF_error("Graphics card memory size %d (0x%x) larger than maximum reserved %d (0x%x).", p.rtgmem_size, p.rtgmem_size, max_z3fastmem, max_z3fastmem);
+				this.logger.logError("Graphics card memory size %d (0x%x) larger than maximum reserved %d (0x%x).", p.rtgmem_size, p.rtgmem_size, max_z3fastmem, max_z3fastmem);
 				p.rtgmem_size = max_z3fastmem;
 				err = 1;
 			}
 			if ((p.rtgmem_size & (p.rtgmem_size - 1)) != 0 || (p.rtgmem_size != 0 && (p.rtgmem_size < 0x100000))) {
-				SAEF_error("Unsupported graphics card memory size %d (0x%x).", p.rtgmem_size, p.rtgmem_size);
+				this.logger.logError("Unsupported graphics card memory size %d (0x%x).", p.rtgmem_size, p.rtgmem_size);
 				if (p.rtgmem_size > max_z3fastmem)
 					p.rtgmem_size = max_z3fastmem;
 				else
@@ -2150,22 +2142,22 @@ export class SAEO_Configuration {
 				err = 1;
 			}*/
 			/*if (p.memory.z3FastSize > max_z3fastmem) {
-				SAEF_error("Zorro III fastmem size %d (0x%x) larger than max reserved %d (0x%x).", p.memory.z3FastSize, p.memory.z3FastSize, max_z3fastmem, max_z3fastmem);
+				this.logger.logError("Zorro III fastmem size %d (0x%x) larger than max reserved %d (0x%x).", p.memory.z3FastSize, p.memory.z3FastSize, max_z3fastmem, max_z3fastmem);
 				p.memory.z3FastSize = max_z3fastmem;
 				err = 1;
 			}*/
 			if ((p.memory.z3FastSize & (p.memory.z3FastSize - 1)) != 0 || (p.memory.z3FastSize != 0 && p.memory.z3FastSize < 0x100000)) {
-				SAEF_warn("config.fixup_prefs() Unsupported Zorro III fastmem size %d (0x%x). Disabling fastmem...", p.memory.z3FastSize, p.memory.z3FastSize);
+				this.logger.logWarn("config.fixup_prefs() Unsupported Zorro III fastmem size %d (0x%x). Disabling fastmem...", p.memory.z3FastSize, p.memory.z3FastSize);
 				p.memory.z3FastSize = 0;
 				//err = 1;
 			}
 			/*if (p.z3fastmem2_size > max_z3fastmem) {
-				SAEF_error("Zorro III fastmem2 size %d (0x%x) larger than max reserved %d (0x%x).", p.z3fastmem2_size, p.z3fastmem2_size, max_z3fastmem, max_z3fastmem);
+				this.logger.logError("Zorro III fastmem2 size %d (0x%x) larger than max reserved %d (0x%x).", p.z3fastmem2_size, p.z3fastmem2_size, max_z3fastmem, max_z3fastmem);
 				p.z3fastmem2_size = max_z3fastmem;
 				err = 1;
 			}
 			if ((p.z3fastmem2_size & (p.z3fastmem2_size - 1)) != 0 || (p.z3fastmem2_size != 0 && p.z3fastmem2_size < 0x100000)) {
-				SAEF_error("Unsupported Zorro III fastmem2 size %x (%x).", p.z3fastmem2_size, p.z3fastmem2_size);
+				this.logger.logError("Unsupported Zorro III fastmem2 size %x (%x).", p.z3fastmem2_size, p.z3fastmem2_size);
 				p.z3fastmem2_size = 0;
 				err = 1;
 			}*/
@@ -2174,12 +2166,12 @@ export class SAEO_Configuration {
 				p.memory.z3AutoConfigStart = 0x1000000;
 
 			/*if (p.z3chipmem_size > max_z3fastmem) {
-				SAEF_error("Zorro III fake chipmem size %d (0x%x) larger than max reserved %d (0x%x).", p.z3chipmem_size, p.z3chipmem_size, max_z3fastmem, max_z3fastmem);
+				this.logger.logError("Zorro III fake chipmem size %d (0x%x) larger than max reserved %d (0x%x).", p.z3chipmem_size, p.z3chipmem_size, max_z3fastmem, max_z3fastmem);
 				p.z3chipmem_size = max_z3fastmem;
 				err = 1;
 			}
 			if (((p.z3chipmem_size & (p.z3chipmem_size - 1)) != 0 &&  p.z3chipmem_size != 0x18000000 && p.z3chipmem_size != 0x30000000) || (p.z3chipmem_size != 0 && p.z3chipmem_size < 0x100000)) {
-				SAEF_error("Unsupported 32-bit chipmem size %d (0x%x).", p.z3chipmem_size, p.z3chipmem_size);
+				this.logger.logError("Unsupported 32-bit chipmem size %d (0x%x).", p.z3chipmem_size, p.z3chipmem_size);
 				p.z3chipmem_size = 0;
 				err = 1;
 			}*/
@@ -2187,99 +2179,99 @@ export class SAEO_Configuration {
 			if (p.cpu.addressSpace24 && (p.memory.z3FastSize != 0)) {
 				//p.memory.z3FastSize = p.z3fastmem2_size = p.z3chipmem_size = 0;
 				p.memory.z3FastSize = 0;
-				//SAEF_error("Can't use a Z3 graphics card or 32-bit memory when using a 24 bit address space.");
-				SAEF_warn("config.fixup_prefs() Can't use Zorro III memory when using a 24 bit address space. Disabling memory...");
+				//this.logger.logError("Can't use a Z3 graphics card or 32-bit memory when using a 24 bit address space.");
+				this.logger.logWarn("config.fixup_prefs() Can't use Zorro III memory when using a 24 bit address space. Disabling memory...");
 			}
 
 			if (p.memory.bogoSize != 0 && p.memory.bogoSize != 0x80000 && p.memory.bogoSize != 0x100000 && p.memory.bogoSize != 0x180000 && p.memory.bogoSize != 0x1c0000) {
-				SAEF_warn("config.fixup_prefs() Unsupported bogomem size %d (0x%x). Disabling bogomem...", p.memory.bogoSize, p.memory.bogoSize);
+				this.logger.logWarn("config.fixup_prefs() Unsupported bogomem size %d (0x%x). Disabling bogomem...", p.memory.bogoSize, p.memory.bogoSize);
 				p.memory.bogoSize = 0;
 				//err = 1;
 			}
 			if (p.memory.bogoSize > 0x180000 && (p.chipset.fatGaryRev >= 0 || p.chipset.ide || p.chipset.ramseyRev >= 0)) {
 				p.memory.bogoSize = 0x180000;
-				SAEF_warn("config.fixup_prefs() Possible Gayle bogomem conflict fixed.");
+				this.logger.logWarn("config.fixup_prefs() Possible Gayle bogomem conflict fixed.");
 			}
 			if (p.memory.chipSize > 0x200000 && p.memory.z2FastSize > 262144) {
-				SAEF_warn("config.fixup_prefs() Can't use Zorro II fastmem and more than 2M chipmem at the same time. Limiting chipmem to 2M...");
+				this.logger.logWarn("config.fixup_prefs() Can't use Zorro II fastmem and more than 2M chipmem at the same time. Limiting chipmem to 2M...");
 				p.memory.chipSize = 0x200000;
 				//err = 1;
 			}
 			/*if (p.memory.chipSize > 0x200000 && p.rtgmem_size && gfxboard_get_configtype(p.rtgmem_type) == 2) {
-				SAEF_error("You can't use Zorro II RTG and more than 2MB chip at the same time.");
+				this.logger.logError("You can't use Zorro II RTG and more than 2MB chip at the same time.");
 				p.memory.chipSize = 0x200000;
 				err = 1;
 			}
 			if (p.mem25bit_size > 128 << 20 || (p.mem25bit_size & 0xfffff)) {
 				p.mem25bit_size = 0;
-				SAEF_error("Unsupported 25bit RAM size");
+				this.logger.logError("Unsupported 25bit RAM size");
 			}*/
 			if (p.memory.ramsey.lowSize > 64 << 20 || (p.memory.ramsey.lowSize & 0xfffff)) {
 				p.memory.ramsey.lowSize = 0;
-				SAEF_warn("config.fixup_prefs() Unsupported Mainboard fastmem size. Disabling fastmem... (RAMSEY low)");
+				this.logger.logWarn("config.fixup_prefs() Unsupported Mainboard fastmem size. Disabling fastmem... (RAMSEY low)");
 			}
 			if (p.memory.ramsey.highSize > 128 << 20 || (p.memory.ramsey.highSize & 0xfffff)) {
 				p.memory.ramsey.highSize = 0;
-				SAEF_warn("config.fixup_prefs() Unsupported CPU-Board fastmem size. Disabling fastmem... (RAMSEY high)");
+				this.logger.logWarn("config.fixup_prefs() Unsupported CPU-Board fastmem size. Disabling fastmem... (RAMSEY high)");
 			}
 
 			/*if (p.rtgmem_type >= GFXBOARD_HARDWARE) {
 				if (gfxboard_get_vram_min(p.rtgmem_type) > 0 && p.rtgmem_size < gfxboard_get_vram_min (p.rtgmem_type)) {
-					SAEF_error("Graphics card memory size %d (0x%x) smaller than minimum hardware supported %d (0x%x).",
+					this.logger.logError("Graphics card memory size %d (0x%x) smaller than minimum hardware supported %d (0x%x).",
 						p.rtgmem_size, p.rtgmem_size, gfxboard_get_vram_min(p.rtgmem_type), gfxboard_get_vram_min(p.rtgmem_type));
 					p.rtgmem_size = gfxboard_get_vram_min (p.rtgmem_type);
 				}
 				if (p.cpu.addressSpace24 && gfxboard_get_configtype(p.rtgmem_type) == 3) {
 					p.rtgmem_type = GFXBOARD_UAE_Z2;
 					p.rtgmem_size = 0;
-					SAEF_error("Z3 RTG and 24-bit address space are not compatible."));
+					this.logger.logError("Z3 RTG and 24-bit address space are not compatible."));
 				}
 				if (gfxboard_get_vram_max(p.rtgmem_type) > 0 && p.rtgmem_size > gfxboard_get_vram_max(p.rtgmem_type)) {
-					SAEF_error("Graphics card memory size %d (0x%x) larger than maximum hardware supported %d (0x%x).",
+					this.logger.logError("Graphics card memory size %d (0x%x) larger than maximum hardware supported %d (0x%x).",
 						p.rtgmem_size, p.rtgmem_size, gfxboard_get_vram_max(p.rtgmem_type), gfxboard_get_vram_max(p.rtgmem_type));
 					p.rtgmem_size = gfxboard_get_vram_max(p.rtgmem_type);
 				}
 			}
 			if (p.cpu.addressSpace24 && p.rtgmem_size && p.rtgmem_type == GFXBOARD_UAE_Z3) {
-				SAEF_error("Z3 RTG and 24bit address space are not compatible.");
+				this.logger.logError("Z3 RTG and 24bit address space are not compatible.");
 				p.rtgmem_type = GFXBOARD_UAE_Z2;
 			}
 			if (p.rtgmem_type == GFXBOARD_UAE_Z2 && (p.memory.chipSize > 2 * 1024 * 1024 || getz2size (p) > 8 * 1024 * 1024 || getz2size (p) < 0)) {
 				p.rtgmem_size = 0;
-				SAEF_error("Too large Z2 RTG memory size.");
+				this.logger.logError("Too large Z2 RTG memory size.");
 			}*/
 			/*#if 0
 			if (p.cpu.speed < -1 || p.cpu.speed > 20) {
-				SAEF_error("Bad value for -w parameter: must be -1, 0, or within 1..20.\n");
+				this.logger.logError("Bad value for -w parameter: must be -1, 0, or within 1..20.\n");
 				p.cpu.speed = 4;
 				err = 1;
 			}
 			#endif*/
 			if (p.audio.mode < SAEC_Config_Audio_Mode_Off || p.audio.mode > SAEC_Config_Audio_Mode_On_Best) {
-				SAEF_warn("config.fixup_prefs() Bad 'config.audio.mode'. Disabling audio...");
+				this.logger.logWarn("config.fixup_prefs() Bad 'config.audio.mode'. Disabling audio...");
 				p.audio.mode = SAEC_Config_Audio_Mode_Off;
 				//err = 1;
 			}
 
 			if (p.chipset.z3AutoConfig && p.cpu.addressSpace24) {
 				p.chipset.z3AutoConfig = false;
-				SAEF_warn("config.fixup_prefs() Zorro III autoconfig and 24bit address space are not compatible. Disabling Zorro III autoconfig...");
+				this.logger.logWarn("config.fixup_prefs() Zorro III autoconfig and 24bit address space are not compatible. Disabling Zorro III autoconfig...");
 			}
 			//if ((p.memory.z3FastSize || p.z3fastmem2_size || p.z3chipmem_size) && p.cpu.addressSpace24) {
 			if ((p.memory.z3FastSize) && p.cpu.addressSpace24) {
-				SAEF_warn("config.fixup_prefs() Zorro III memory can't be used if address space is 24-bit., Disabling Zorro III memory...");
+				this.logger.logWarn("config.fixup_prefs() Zorro III memory can't be used if address space is 24-bit., Disabling Zorro III memory...");
 				p.memory.z3FastSize = 0;
 				//p.z3fastmem2_size = 0;
 				//p.z3chipmem_size = 0;
 				//err = 1;
 			}
 			/*if ((p.rtgmem_size > 0 && p.rtgmem_type == GFXBOARD_UAE_Z3) && p.cpu.addressSpace24) {
-				SAEF_error("UAEGFX RTG can't be used if address space is 24-bit.");
+				this.logger.logError("UAEGFX RTG can't be used if address space is 24-bit.");
 				p.rtgmem_size = 0;
 				err = 1;
 			}*/
 			/*if (p.nr_floppies < 0 || p.nr_floppies > 4) {
-				SAEF_error("Invalid number of floppies.  Using 2.");
+				this.logger.logError("Invalid number of floppies.  Using 2.");
 				p.nr_floppies = 2;
 				p.floppy.drive[0].type = SAEC_Config_Floppy_Type_35_DD;
 				p.floppy.drive[1].type = SAEC_Config_Floppy_Type_35_DD;
@@ -2288,16 +2280,16 @@ export class SAEO_Configuration {
 				err = 1;
 			}*/
 			if (p.floppy.speed > 0 && p.floppy.speed < 10) {
-				SAEF_warn("config.fixup_prefs() Invalid floppy speed. Setting to 'Turbo' (100)...");
+				this.logger.logWarn("config.fixup_prefs() Invalid floppy speed. Setting to 'Turbo' (100)...");
 				p.floppy.speed = 100;
 			}
 
 			/*if (p.input_mouse_speed < 1 || p.input_mouse_speed > 1000) {
-				SAEF_error("Invalid mouse speed.");
+				this.logger.logError("Invalid mouse speed.");
 				p.input_mouse_speed = 100;
 			}*/
 			if (p.chipset.colLevel < SAEC_Config_Chipset_ColLevel_None || p.chipset.colLevel > SAEC_Config_Chipset_ColLevel_Full) {
-				SAEF_warn("config.fixup_prefs() Invalid collision support level. Using Sprite-Sprite...");
+				this.logger.logWarn("config.fixup_prefs() Invalid collision support level. Using Sprite-Sprite...");
 				p.chipset.colLevel = SAEC_Config_Chipset_ColLevel_Sprite_Sprite;
 				//err = 1;
 			}
@@ -2327,35 +2319,35 @@ export class SAEO_Configuration {
 			 * also Graffiti uses genlock audio bit as an enable signal
 			 */
 			/*if (p.chipset.genlock && p.monitoremu) {
-				SAEF_error("Genlock and A2024 or Graffiti can't be active simultaneously.");
+				this.logger.logError("Genlock and A2024 or Graffiti can't be active simultaneously.");
 				p.chipset.genlock = false;
 			}
 			if (p.cs_hacks) {
-				SAEF_error("chipset_hacks is nonzero (0x%04x).", p.cs_hacks);
+				this.logger.logError("chipset_hacks is nonzero (0x%04x).", p.cs_hacks);
 			}*/
 			fixup_prefs_dimensions(p);
 
 			//OWN
 			if (p.video.api == SAEC_Config_Video_API_Canvas && p.video.colorMode != 5) {
 				p.video.colorMode = 5;
-				SAEF_warn("config.fixup_prefs() p.video.colorMode must 5 if 'Canvas' is used. (set to 5)");
+				this.logger.logWarn("config.fixup_prefs() p.video.colorMode must 5 if 'Canvas' is used. (set to 5)");
 			}
 			//OWN
 			if (p.video.luminance < -1000 || p.video.luminance > 1000) {
 				p.video.luminance = 0;
-				SAEF_warn("config.fixup_prefs() p.video.luminance must be between -1000 and 1000. (reset to 0)");
+				this.logger.logWarn("config.fixup_prefs() p.video.luminance must be between -1000 and 1000. (reset to 0)");
 			}
 			if (p.video.contrast < -1000 || p.video.contrast > 1000) {
 				p.video.contrast = 0;
-				SAEF_warn("config.fixup_prefs() p.video.contrast must be between -1000 and 1000. (reset to 0)");
+				this.logger.logWarn("config.fixup_prefs() p.video.contrast must be between -1000 and 1000. (reset to 0)");
 			}
 			if (p.video.gamma < -1000 || p.video.gamma > 1000) {
 				p.video.gamma = 0;
-				SAEF_warn("config.fixup_prefs() p.video.gamma must be between -1000 and 1000. (reset to 0)");
+				this.logger.logWarn("config.fixup_prefs() p.video.gamma must be between -1000 and 1000. (reset to 0)");
 			}
 			if (p.video.alpha < 0 || p.video.alpha > 255) {
 				p.video.alpha = 255;
-				SAEF_warn("config.fixup_prefs() p.video.gamma must be between 0 and 255. (reset to 255)");
+				this.logger.logWarn("config.fixup_prefs() p.video.gamma must be between 0 and 255. (reset to 255)");
 			}
 
 			/*#if !defined (CPUEMU_13)
@@ -2368,7 +2360,7 @@ export class SAEO_Configuration {
 			#endif*/
 			/*if (p.cpu_cycle_exact) {
 				if (p.video.framerate > 1) {
-					SAEF_error("Cycle-exact requires disabled frameskip.");
+					this.logger.logError("Cycle-exact requires disabled frameskip.");
 					p.video.framerate = 1;
 				}
 			}*/
@@ -2384,11 +2376,11 @@ export class SAEO_Configuration {
 			//inputdevice_fix_prefs(p);
 			if (p.ports[0].type == SAEC_Config_Ports_Type_Joy && p.ports[0].device == SAEC_Config_Ports_Device_None) {
 				p.ports[0].type = SAEC_Config_Ports_Type_JoyEmu;
-				SAEF_warn("config.fixup_prefs() p.ports[0].device is invalid. (falling back to joystick-emulation)");
+				this.logger.logWarn("config.fixup_prefs() p.ports[0].device is invalid. (falling back to joystick-emulation)");
 			}
 			if (p.ports[1].type == SAEC_Config_Ports_Type_Joy && p.ports[1].device == SAEC_Config_Ports_Device_None) {
 				p.ports[1].type = SAEC_Config_Ports_Type_JoyEmu;
-				SAEF_warn("config.fixup_prefs() p.ports[1].device is invalid. (falling back to joystick-emulation)");
+				this.logger.logWarn("config.fixup_prefs() p.ports[1].device is invalid. (falling back to joystick-emulation)");
 			}
 
 			return true; //err == 0;
